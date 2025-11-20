@@ -188,6 +188,21 @@
     @apply border-border outline-ring/50;
   }
 
+  /* Vinyl record spinning animation */
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
   body {
     @apply bg-background text-foreground;
     background: radial-gradient(circle at top center, #1a1a1a 0%, #000000 100%);
