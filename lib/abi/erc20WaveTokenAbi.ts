@@ -1,7 +1,7 @@
 /**
- * Minimal ERC-20 ABI for $MINT token interactions
+ * Minimal ERC-20 ABI for $WAVE token interactions
  */
-export const erc20MintTokenAbi = [
+export const erc20WaveTokenAbi = [
   {
     inputs: [{ name: "account", type: "address" }],
     name: "balanceOf",

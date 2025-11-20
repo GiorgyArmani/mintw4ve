@@ -2,17 +2,17 @@
 
 **Mint your art. Ride your wave.**
 
-MINTWAVE is a decentralized music distribution platform where indie artists upload music, mint it as NFTs, and earn $MINT tokens through plays. Artists can spend tokens in the marketplace for beats, cover art, video editing, and more.
+MINTWAVE is a decentralized music distribution platform where indie artists upload music, mint it as NFTs, and earn $WAVE tokens through plays. Artists can spend tokens in the marketplace for beats, cover art, video editing, and more.
 
-## 🚀 Features
+## Features
 
 - **Upload & Mint**: Upload your tracks and mint them as NFTs on Ethereum
-- **Stream2Earn**: Earn $MINT tokens when people listen to your music
-- **Artist Marketplace**: Spend $MINT on services from other artists
+- **Stream2Earn**: Earn $WAVE tokens when people listen to your music
+- **Artist Marketplace**: Spend $WAVE on services from other artists
 - **Web3 Native**: Built on Ethereum with full wallet integration
 - **Royalty Management**: Automated royalty distribution (coming soon)
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Web3**: wagmi, viem, ConnectKit (RainbowKit alternative)
@@ -23,7 +23,7 @@ MINTWAVE is a decentralized music distribution platform where indie artists uplo
 
 ## 📦 Installation
 
-\`\`\`bash
+```bash
 # Clone the repository
 git clone https://github.com/yourusername/mintwave.git
 

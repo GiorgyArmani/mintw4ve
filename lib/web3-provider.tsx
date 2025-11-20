@@ -2,29 +2,18 @@
 
 import type React from "react"
 
-import { WagmiProvider, createConfig, http } from "wagmi"
+import { WagmiProvider } from "wagmi"
 import { sepolia, mainnet } from "wagmi/chains"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { ConnectKitProvider, getDefaultConfig } from "connectkit"
+import { getDefaultConfig, RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit"
+import "@rainbow-me/rainbowkit/styles.css"
 
-const config = createConfig(
-  getDefaultConfig({
-    // Your dApp info
-    appName: "MINTWAVE",
-    appDescription: "Mint your art. Ride your wave.",
-    appUrl: "https://mintwave.app",
-    appIcon: "/brand/mintwave-logo.svg",
-
-    // WalletConnect project ID (get from https://cloud.walletconnect.com)
-    walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "placeholder",
-
-    chains: [sepolia, mainnet],
-    transports: {
-      [sepolia.id]: http(),
-      [mainnet.id]: http(),
-    },
-  }),
-)
+const config = getDefaultConfig({
+  appName: "MINTWAVE",
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "placeholder",
+  chains: [mainnet, sepolia],
+  ssr: true, // If your dApp uses server side rendering (SSR)
+})
 
 const queryClient = new QueryClient()
 
@@ -32,7 +21,13 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <ConnectKitProvider theme="auto">{children}</ConnectKitProvider>
+        <RainbowKitProvider theme={darkTheme({
+          accentColor: '#00ff9d', // Mint color
+          accentColorForeground: 'black',
+          borderRadius: 'medium',
+        })}>
+          {children}
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )

@@ -4,13 +4,13 @@ import type React from "react"
 
 import Link from "next/link"
 import { usePathname, useRouter } from 'next/navigation'
-import { ConnectKitButton } from "connectkit"
+import { ConnectButton } from "@rainbow-me/rainbowkit"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import type { User } from "@supabase/supabase-js"
+import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js"
 
 export function PageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -19,16 +19,18 @@ export function PageShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const supabase = createClient()
-    
+
     // Get initial user
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
-    })
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser()
+      setUser(data.user)
+    }
+    getUser()
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user ?? null)
     })
 
@@ -53,45 +55,106 @@ export function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-6">
+      <header className="sticky top-0 z-50 glass border-b border-white/5">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            {/* Navigation - Left Side */}
-            <nav className="flex items-center gap-6">
-              {navLinks.map((link) => (
+            {/* Logo & Navigation */}
+            <div className="flex items-center gap-8">
+              <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+                <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={140} height={40} priority />
+              </Link>
+
+              <nav className="hidden md:flex items-center gap-6">
                 <Link
-                  key={link.href}
-                  href={link.href}
+                  href="/"
                   className={cn(
                     "text-sm font-medium transition-colors hover:text-mint",
-                    pathname === link.href ? "text-foreground" : "text-muted-foreground",
+                    pathname === "/" ? "text-white" : "text-muted-foreground",
                   )}
                 >
-                  {link.label}
+                  Home
                 </Link>
-              ))}
-            </nav>
+                <Link
+                  href="/docs"
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-mint",
+                    pathname === "/docs" ? "text-white" : "text-muted-foreground",
+                  )}
+                >
+                  Docs
+                </Link>
+                <Link
+                  href="/listen"
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-mint",
+                    pathname === "/listen" ? "text-white" : "text-muted-foreground",
+                  )}
+                >
+                  Listen
+                </Link>
 
-            {/* Wallet Button - Right Side */}
+                {user && (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className={cn(
+                        "text-sm font-medium transition-colors hover:text-mint",
+                        pathname === "/dashboard" ? "text-white" : "text-muted-foreground",
+                      )}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/market"
+                      className={cn(
+                        "text-sm font-medium transition-colors hover:text-mint",
+                        pathname === "/market" ? "text-white" : "text-muted-foreground",
+                      )}
+                    >
+                      Marketplace
+                    </Link>
+                    <Link
+                      href="/upload"
+                      className={cn(
+                        "text-sm font-medium transition-colors hover:text-mint",
+                        pathname === "/upload" ? "text-white" : "text-muted-foreground",
+                      )}
+                    >
+                      Upload
+                    </Link>
+                  </>
+                )}
+              </nav>
+            </div>
+
+            {/* Right Side Actions */}
             <div className="flex items-center gap-4">
               {user ? (
-                <>
-                  <span className="text-sm text-muted-foreground">{user.email}</span>
-                  <Button onClick={handleSignOut} variant="outline" size="sm">
+                <div className="flex items-center gap-4">
+                  <span className="hidden sm:inline-block text-xs text-muted-foreground bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                    {user.email}
+                  </span>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-white hover:bg-white/10"
+                  >
                     Sign Out
                   </Button>
-                </>
+                </div>
               ) : (
-                <>
-                  <Button asChild variant="ghost" size="sm">
+                <div className="flex items-center gap-3">
+                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-white">
                     <Link href="/auth/login">Login</Link>
                   </Button>
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild size="sm" className="bg-mint text-black hover:bg-mint/90 font-semibold shadow-lg shadow-mint/20">
                     <Link href="/auth/sign-up">Sign Up</Link>
                   </Button>
-                </>
+                </div>
               )}
-              <ConnectKitButton />
+              <div className="h-6 w-px bg-white/10 mx-1" />
+              <ConnectButton showBalance={false} accountStatus="avatar" chainStatus="icon" />
             </div>
           </div>
         </div>

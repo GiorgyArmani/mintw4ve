@@ -31,9 +31,9 @@ export async function mockMintTrack(metadataUri: string, walletAddress: string):
   }
 }
 
-// Simulates getting $MINT token balance
-export async function mockGetMintBalance(address: string): Promise<MockMintBalance> {
-  // Return a random balance between 0-1000 MINT
+// Simulates getting $WAVE token balance
+export async function mockGetWaveBalance(address: string): Promise<MockMintBalance> {
+  // Return a random balance between 0-1000 WAVE
   const balance = (Math.random() * 1000).toFixed(2)
 
   return {
@@ -44,7 +44,7 @@ export async function mockGetMintBalance(address: string): Promise<MockMintBalan
 
 // Simulates awarding tokens for streaming
 export async function mockAwardStreamEarnings(trackId: string, listenerAddress: string): Promise<{ earned: string }> {
-  // Award between 0.1-1 MINT per stream
+  // Award between 0.1-1 WAVE per stream
   const earned = (Math.random() * 0.9 + 0.1).toFixed(2)
 
   // Simulate processing delay
