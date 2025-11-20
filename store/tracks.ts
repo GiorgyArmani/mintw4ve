@@ -15,7 +15,13 @@ export interface Track {
   plays: number
   earnings: string
   createdAt: string
+  // Social features
+  like_count?: number
+  comment_count?: number
+  tip_count?: number
+  total_tips?: number
 }
+
 
 interface TracksState {
   tracks: Track[]
@@ -48,10 +54,10 @@ export const useTracksStore = create<TracksState>()(
           tracks: state.tracks.map((t) =>
             t.id === id
               ? {
-                  ...t,
-                  plays: t.plays + 1,
-                  earnings: (Number.parseFloat(t.earnings) + Number.parseFloat(earned)).toFixed(2),
-                }
+                ...t,
+                plays: t.plays + 1,
+                earnings: (Number.parseFloat(t.earnings) + Number.parseFloat(earned)).toFixed(2),
+              }
               : t,
           ),
         })),

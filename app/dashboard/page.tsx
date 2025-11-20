@@ -9,15 +9,18 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTracksStore } from "@/store/tracks"
 import { useWalletStore } from "@/store/wallet"
-import { formatEther } from "viem"
 import Link from "next/link"
 import { Play, TrendingUp, DollarSign, Music, Users, Calendar } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { GradientText } from "@/components/gradient-text"
 
 export default function DashboardPage() {
   const { address, isConnected } = useAccount()
   const { tracks } = useTracksStore()
-  const { balance, earnings } = useWalletStore()
+  const { mockWaveBalance } = useWalletStore()
   const [userTracks, setUserTracks] = useState<any[]>([])
+  const [userEmail, setUserEmail] = useState<string>("")
   const [stats, setStats] = useState({
     totalPlays: 0,
     totalEarnings: "0",
@@ -26,15 +29,24 @@ export default function DashboardPage() {
   })
 
   useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.email) setUserEmail(user.email)
+    }
+    getUser()
+  }, [])
+
+  useEffect(() => {
     if (address) {
       // Filter tracks owned by current user
       const myTracks = tracks.filter((track) => track.artist.toLowerCase() === address.toLowerCase())
       setUserTracks(myTracks)
 
       // Calculate stats
-      const totalPlays = myTracks.reduce((sum, track) => sum + track.playCount, 0)
+      const totalPlays = myTracks.reduce((sum, track) => sum + track.plays, 0)
       const totalEarnings = myTracks.reduce(
-        (sum, track) => sum + track.playCount * 10, // 10 MINT per play
+        (sum, track) => sum + track.plays * 10, // 10 WAVE per play
         0,
       )
       const avgPlays = myTracks.length > 0 ? totalPlays / myTracks.length : 0
@@ -51,16 +63,23 @@ export default function DashboardPage() {
   if (!isConnected) {
     return (
       <PageShell>
-        <div className="container mx-auto px-4 py-16">
-          <div className="max-w-md mx-auto text-center space-y-6">
-            <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-mint to-violet flex items-center justify-center">
-              <Music className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold">Connect Your Wallet</h1>
-            <p className="text-muted-foreground">
-              Connect your wallet to view your dashboard, track analytics, and manage your music.
-            </p>
-          </div>
+        <div className="container mx-auto px-4 py-32">
+          <Card className="max-w-md mx-auto text-center glass-card border-mint/20">
+            <CardContent className="pt-12 pb-12 space-y-6">
+              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mint to-violet flex items-center justify-center shadow-lg shadow-mint/20 animate-pulse">
+                <Music className="w-10 h-10 text-white" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold">Connect Your Wallet</h1>
+                <p className="text-muted-foreground">
+                  Connect your wallet to view your dashboard, track analytics, and manage your music.
+                </p>
+              </div>
+              <div className="pt-4 flex justify-center">
+                <ConnectButton />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </PageShell>
     )
@@ -68,82 +87,96 @@ export default function DashboardPage() {
 
   return (
     <PageShell>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-12">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">Track your music performance and earnings</p>
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <h1 className="text-4xl md:text-5xl font-bold">
+              Welcome back, <GradientText>{userEmail.split('@')[0] || 'Artist'}</GradientText>
+            </h1>
+            <p className="text-xl text-muted-foreground">Here's what's happening with your music today.</p>
+          </div>
+          <Button asChild size="lg" className="bg-mint text-black hover:bg-mint/90 shadow-lg shadow-mint/20">
+            <Link href="/upload">
+              <Music className="w-4 h-4 mr-2" />
+              Upload New Track
+            </Link>
+          </Button>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <Card className="glass-card border-mint/10">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
+              <DollarSign className="h-4 w-4 text-mint" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalEarnings} MINT</div>
+              <div className="text-3xl font-bold text-white">{stats.totalEarnings} <span className="text-sm font-normal text-mint">WAVE</span></div>
               <p className="text-xs text-muted-foreground mt-1">
                 ≈ ${(Number.parseFloat(stats.totalEarnings) * 0.1).toFixed(2)} USD
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card border-cyan/10">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Plays</CardTitle>
-              <Play className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Plays</CardTitle>
+              <Play className="h-4 w-4 text-cyan" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalPlays.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-white">{stats.totalPlays.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground mt-1">Across all tracks</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card border-violet/10">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Your Tracks</CardTitle>
-              <Music className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Your Tracks</CardTitle>
+              <Music className="h-4 w-4 text-violet" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalTracks}</div>
+              <div className="text-3xl font-bold text-white">{stats.totalTracks}</div>
               <p className="text-xs text-muted-foreground mt-1">Total uploaded</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="glass-card border-white/10">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Avg Plays/Track</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Avg Plays/Track</CardTitle>
+              <TrendingUp className="h-4 w-4 text-white" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.avgPlaysPerTrack}</div>
+              <div className="text-3xl font-bold text-white">{stats.avgPlaysPerTrack}</div>
               <p className="text-xs text-muted-foreground mt-1">Per track average</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="tracks" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="tracks">Your Tracks</TabsTrigger>
-            <TabsTrigger value="earnings">Earnings</TabsTrigger>
-            <TabsTrigger value="wallet">Wallet</TabsTrigger>
+        <Tabs defaultValue="tracks" className="space-y-8">
+          <TabsList className="bg-white/5 border border-white/10 p-1">
+            <TabsTrigger value="tracks" className="data-[state=active]:bg-mint data-[state=active]:text-black">Your Tracks</TabsTrigger>
+            <TabsTrigger value="earnings" className="data-[state=active]:bg-mint data-[state=active]:text-black">Earnings</TabsTrigger>
+            <TabsTrigger value="wallet" className="data-[state=active]:bg-mint data-[state=active]:text-black">Wallet</TabsTrigger>
           </TabsList>
 
           {/* Your Tracks Tab */}
-          <TabsContent value="tracks" className="space-y-4">
+          <TabsContent value="tracks" className="space-y-6">
             {userTracks.length === 0 ? (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center space-y-4">
-                    <Music className="w-12 h-12 mx-auto text-muted-foreground" />
-                    <h3 className="text-lg font-semibold">No tracks yet</h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      Upload your first track to start earning $MINT tokens from plays
-                    </p>
-                    <Button asChild>
+              <Card className="glass-card border-dashed border-2 border-white/10">
+                <CardContent className="py-20">
+                  <div className="text-center space-y-6">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-white/5 flex items-center justify-center">
+                      <Music className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold">No tracks yet</h3>
+                      <p className="text-muted-foreground max-w-md mx-auto">
+                        Upload your first track to start earning $WAVE tokens from plays
+                      </p>
+                    </div>
+                    <Button asChild className="bg-mint text-black hover:bg-mint/90">
                       <Link href="/upload">Upload Track</Link>
                     </Button>
                   </div>
@@ -152,27 +185,29 @@ export default function DashboardPage() {
             ) : (
               <div className="grid gap-4">
                 {userTracks.map((track) => (
-                  <Card key={track.id}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
+                  <Card key={track.id} className="glass-card glass-hover border-white/5 overflow-hidden group">
+                    <CardContent className="p-0">
+                      <div className="flex flex-col md:flex-row items-start md:items-center gap-6 p-6">
+                        {/* Track Info */}
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-lg">{track.title}</h3>
-                            <Badge variant="secondary">{track.genre}</Badge>
+                            <h3 className="font-bold text-xl truncate text-white group-hover:text-mint transition-colors">{track.title}</h3>
+                            <Badge variant="secondary" className="bg-white/10 hover:bg-white/20 border-white/5">{track.genre}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-4">{track.description}</p>
-                          <div className="flex items-center gap-6 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Play className="w-4 h-4 text-muted-foreground" />
-                              <span className="font-medium">{track.playCount}</span>
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{track.description}</p>
+
+                          <div className="flex flex-wrap items-center gap-6 text-sm">
+                            <div className="flex items-center gap-2 text-white/80">
+                              <Play className="w-4 h-4 text-mint" />
+                              <span className="font-medium">{track.plays}</span>
                               <span className="text-muted-foreground">plays</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <DollarSign className="w-4 h-4 text-muted-foreground" />
-                              <span className="font-medium">{track.playCount * 10}</span>
-                              <span className="text-muted-foreground">MINT earned</span>
+                            <div className="flex items-center gap-2 text-white/80">
+                              <DollarSign className="w-4 h-4 text-mint" />
+                              <span className="font-medium">{track.plays * 10}</span>
+                              <span className="text-muted-foreground">WAVE earned</span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-white/80">
                               <Calendar className="w-4 h-4 text-muted-foreground" />
                               <span className="text-muted-foreground">
                                 {new Date(track.uploadedAt).toLocaleDateString()}
@@ -180,9 +215,13 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <Button variant="outline" asChild>
-                          <Link href={`/tracks/${track.id}`}>View Details</Link>
-                        </Button>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                          <Button variant="outline" asChild className="flex-1 md:flex-none border-white/10 hover:bg-white/10 hover:text-white">
+                            <Link href={`/tracks/${track.id}`}>View Details</Link>
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -192,125 +231,118 @@ export default function DashboardPage() {
           </TabsContent>
 
           {/* Earnings Tab */}
-          <TabsContent value="earnings" className="space-y-4">
-            <Card>
+          <TabsContent value="earnings" className="space-y-6">
+            <Card className="glass-card border-mint/10">
               <CardHeader>
                 <CardTitle>Earnings Overview</CardTitle>
-                <CardDescription>Your $MINT token earnings from track plays</CardDescription>
+                <CardDescription>Your $WAVE token earnings from track plays</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Earned</p>
-                      <p className="text-2xl font-bold">{stats.totalEarnings} MINT</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Rate</p>
-                      <p className="text-lg font-semibold">10 MINT/play</p>
-                    </div>
+              <CardContent className="space-y-8">
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex-1 p-6 bg-gradient-to-br from-mint/10 to-transparent rounded-xl border border-mint/10">
+                    <p className="text-sm text-mint mb-1">Total Earned</p>
+                    <p className="text-4xl font-bold text-white">{stats.totalEarnings} WAVE</p>
                   </div>
+                  <div className="flex-1 p-6 bg-white/5 rounded-xl border border-white/5">
+                    <p className="text-sm text-muted-foreground mb-1">Current Rate</p>
+                    <p className="text-2xl font-bold text-white">10 WAVE <span className="text-sm font-normal text-muted-foreground">/ play</span></p>
+                  </div>
+                </div>
 
-                  {userTracks.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">Earnings by Track</h4>
+                {userTracks.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-lg">Earnings by Track</h4>
+                    <div className="space-y-3">
                       {userTracks.map((track) => (
-                        <div key={track.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <p className="font-medium">{track.title}</p>
-                            <p className="text-sm text-muted-foreground">{track.playCount} plays</p>
+                        <div key={track.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/5 hover:bg-white/10 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded bg-mint/20 flex items-center justify-center text-mint">
+                              <Music className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-white">{track.title}</p>
+                              <p className="text-sm text-muted-foreground">{track.plays} plays</p>
+                            </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">{track.playCount * 10} MINT</p>
+                            <p className="font-bold text-mint">{track.plays * 10} WAVE</p>
                           </div>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                <div className="border-t pt-6">
-                  <h4 className="font-semibold mb-4">How to Earn More</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <span className="text-mint">•</span>
-                      <span>Upload more tracks to diversify your catalog</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-mint">•</span>
-                      <span>Share your tracks on social media to increase plays</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-mint">•</span>
-                      <span>Collaborate with other artists on the platform</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-mint">•</span>
-                      <span>Engage with the community to build your audience</span>
-                    </li>
-                  </ul>
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Wallet Tab */}
-          <TabsContent value="wallet" className="space-y-4">
-            <Card>
+          <TabsContent value="wallet" className="space-y-6">
+            <Card className="glass-card border-white/10">
               <CardHeader>
                 <CardTitle>Wallet Overview</CardTitle>
-                <CardDescription>Manage your $MINT tokens and wallet connection</CardDescription>
+                <CardDescription>Manage your $WAVE tokens and wallet connection</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
+              <CardContent className="space-y-8">
+                <div className="space-y-6">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Connected Address</p>
-                    <p className="font-mono text-sm bg-muted p-2 rounded">
-                      {address?.slice(0, 6)}...{address?.slice(-4)}
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-2">Connected Address</p>
+                    <div className="flex items-center gap-3">
+                      <p className="font-mono text-sm bg-black/40 border border-white/10 px-4 py-2 rounded-lg text-mint">
+                        {address}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">MINT Balance</p>
-                      <p className="text-2xl font-bold">{balance ? formatEther(balance) : "0"} MINT</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-6 bg-gradient-to-br from-violet/10 to-transparent rounded-xl border border-violet/10">
+                      <p className="text-sm text-violet mb-1">Wallet Balance</p>
+                      <p className="text-3xl font-bold text-white">{mockWaveBalance} WAVE</p>
                     </div>
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Total Earned</p>
-                      <p className="text-2xl font-bold">{stats.totalEarnings} MINT</p>
+                    <div className="p-6 bg-gradient-to-br from-mint/10 to-transparent rounded-xl border border-mint/10">
+                      <p className="text-sm text-mint mb-1">Total Earned</p>
+                      <p className="text-3xl font-bold text-white">{stats.totalEarnings} WAVE</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t pt-6">
-                  <h4 className="font-semibold mb-4">Use Your $MINT</h4>
-                  <div className="grid gap-3">
-                    <Button asChild variant="outline" className="justify-start bg-transparent">
+                <div className="border-t border-white/10 pt-8">
+                  <h4 className="font-semibold mb-6">Use Your $WAVE</h4>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <Button asChild variant="outline" className="h-auto py-4 justify-start bg-white/5 border-white/10 hover:bg-white/10 hover:border-mint/50 group">
                       <Link href="/market">
-                        <Music className="w-4 h-4 mr-2" />
-                        Browse Marketplace
+                        <div className="mr-4 p-2 rounded-lg bg-mint/10 text-mint group-hover:bg-mint group-hover:text-black transition-colors">
+                          <Music className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-semibold text-white">Buy Beats</div>
+                          <div className="text-xs text-muted-foreground">Browse the marketplace</div>
+                        </div>
                       </Link>
                     </Button>
-                    <Button asChild variant="outline" className="justify-start bg-transparent">
+                    <Button asChild variant="outline" className="h-auto py-4 justify-start bg-white/5 border-white/10 hover:bg-white/10 hover:border-cyan/50 group">
                       <Link href="/market">
-                        <Users className="w-4 h-4 mr-2" />
-                        Commission Services
+                        <div className="mr-4 p-2 rounded-lg bg-cyan/10 text-cyan group-hover:bg-cyan group-hover:text-black transition-colors">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-semibold text-white">Hire Artists</div>
+                          <div className="text-xs text-muted-foreground">Commission services</div>
+                        </div>
                       </Link>
                     </Button>
-                    <Button asChild variant="outline" className="justify-start bg-transparent">
+                    <Button asChild variant="outline" className="h-auto py-4 justify-start bg-white/5 border-white/10 hover:bg-white/10 hover:border-violet/50 group">
                       <Link href="/docs">
-                        <TrendingUp className="w-4 h-4 mr-2" />
-                        Submit to Platforms
+                        <div className="mr-4 p-2 rounded-lg bg-violet/10 text-violet group-hover:bg-violet group-hover:text-black transition-colors">
+                          <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-semibold text-white">Stake Tokens</div>
+                          <div className="text-xs text-muted-foreground">Earn yield (Coming Soon)</div>
+                        </div>
                       </Link>
                     </Button>
                   </div>
-                </div>
-
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
-                  <p className="text-sm text-amber-900 dark:text-amber-100">
-                    <strong>Note:</strong> This is a development preview using mock data. In production, all
-                    transactions will be on Ethereum mainnet.
-                  </p>
                 </div>
               </CardContent>
             </Card>

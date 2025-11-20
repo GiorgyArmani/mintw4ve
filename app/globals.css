@@ -1,12 +1,14 @@
 @import "tailwindcss";
-@import "tw-animate-css";
+/* @import "tw-animate-css"; */
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
   /* MINTWAVE Theme - Dark Mode (Default) */
-  --background: oklch(0.09 0 0); /* Pure dark background */
-  --foreground: oklch(0.98 0 0); /* Pure white text */
+  --background: oklch(0.09 0 0);
+  /* Pure dark background */
+  --foreground: oklch(0.98 0 0);
+  /* Pure white text */
 
   --card: oklch(0.12 0 0);
   --card-foreground: oklch(0.98 0 0);
@@ -14,8 +16,10 @@
   --popover: oklch(0.12 0 0);
   --popover-foreground: oklch(0.98 0 0);
 
-  --primary: oklch(0.98 0 0); /* White for primary */
-  --primary-foreground: oklch(0.09 0 0); /* Black text on white */
+  --primary: oklch(0.98 0 0);
+  /* White for primary */
+  --primary-foreground: oklch(0.09 0 0);
+  /* Black text on white */
 
   --secondary: oklch(0.15 0 0);
   --secondary-foreground: oklch(0.98 0 0);
@@ -27,9 +31,12 @@
   --accent-foreground: oklch(0.98 0 0);
 
   /* Mint → Cyan → Violet gradient colors */
-  --mint: oklch(0.75 0.18 165); /* Mint green */
-  --cyan: oklch(0.65 0.18 210); /* Cyan blue */
-  --violet: oklch(0.6 0.22 290); /* Violet purple */
+  --mint: oklch(0.75 0.18 165);
+  /* Mint green */
+  --cyan: oklch(0.65 0.18 210);
+  /* Cyan blue */
+  --violet: oklch(0.6 0.22 290);
+  /* Violet purple */
 
   --destructive: oklch(0.6 0.25 27);
   --destructive-foreground: oklch(0.98 0 0);
@@ -155,23 +162,35 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+.gradient-mint-violet {
+  background: linear-gradient(135deg, var(--mint), var(--cyan), var(--violet));
+}
+
+.text-gradient {
+  @apply bg-gradient-to-r from-mint via-cyan to-violet bg-clip-text text-transparent;
+}
+
+.glass {
+  @apply bg-black/40 backdrop-blur-md border border-white/10;
+}
+
+.glass-card {
+  @apply bg-card/30 backdrop-blur-md border border-white/10 shadow-xl;
+}
+
+.glass-hover {
+  @apply transition-all duration-300 hover:bg-white/5 hover:scale-[1.02] hover:shadow-mint/20 hover:shadow-lg;
+}
+
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
-    background: #000000;
-  }
-}
-
-/* Custom utilities for MINTWAVE */
-@layer utilities {
-  .gradient-mint-violet {
-    background: linear-gradient(135deg, var(--mint), var(--cyan), var(--violet));
-  }
-
-  .text-gradient {
-    @apply bg-gradient-to-r from-mint via-cyan to-violet bg-clip-text text-transparent;
+    background: radial-gradient(circle at top center, #1a1a1a 0%, #000000 100%);
+    min-height: 100vh;
   }
 }

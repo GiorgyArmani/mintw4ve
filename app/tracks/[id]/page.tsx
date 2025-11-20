@@ -93,7 +93,7 @@ export default function TrackDetailPage({ params }: { params: Promise<{ id: stri
               <Card>
                 <CardContent className="pt-6 text-center">
                   <div className="text-3xl font-bold text-gradient">{track.earnings}</div>
-                  <div className="text-sm text-muted-foreground mt-1">$MINT Earned</div>
+                  <div className="text-sm text-muted-foreground mt-1">$WAVE Earned</div>
                 </CardContent>
               </Card>
             </div>
@@ -133,7 +133,7 @@ export default function TrackDetailPage({ params }: { params: Promise<{ id: stri
                     <p className="text-sm text-center">
                       <span className="font-semibold text-mint">Stream2Earn Activated!</span>
                       <br />
-                      <span className="text-muted-foreground">You're earning $MINT tokens while listening.</span>
+                      <span className="text-muted-foreground">You're earning $WAVE tokens while listening.</span>
                     </p>
                   </div>
                 )}

@@ -38,20 +38,20 @@ export default function DocsPage() {
             </CardContent>
           </Card>
 
-          {/* How $MINT Works */}
+          {/* How $WAVE Works */}
           <Card>
             <CardHeader>
-              <CardTitle>How the $MINT Token Works</CardTitle>
+              <CardTitle>How the $WAVE Token Works</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                $MINT is an ERC-20 utility token that powers the entire MINTWAVE ecosystem. It serves as the currency
+                $WAVE is an ERC-20 utility token that powers the entire MINTWAVE ecosystem. It serves as the currency
                 for all transactions within the platform.
               </p>
 
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">Earning $MINT</h4>
+                  <h4 className="font-semibold text-foreground mb-2">Earning $WAVE</h4>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>Receive tokens when users stream your music</li>
                     <li>Earn from providing services in the marketplace</li>
@@ -60,7 +60,7 @@ export default function DocsPage() {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">Spending $MINT</h4>
+                  <h4 className="font-semibold text-foreground mb-2">Spending $WAVE</h4>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>Purchase beats and instrumentals from producers</li>
                     <li>Commission cover art and visual designs</li>
@@ -71,7 +71,7 @@ export default function DocsPage() {
               </div>
 
               <p className="pt-2">
-                In the future, $MINT will also be used for governance, allowing token holders to vote on platform
+                In the future, $WAVE will also be used for governance, allowing token holders to vote on platform
                 decisions and feature development.
               </p>
             </CardContent>
@@ -93,7 +93,7 @@ export default function DocsPage() {
 
               <ul className="space-y-2 list-disc list-inside">
                 <li>All transactions use test ETH (not real money)</li>
-                <li>$MINT tokens are for testing purposes only</li>
+                <li>$WAVE tokens are for testing purposes only</li>
                 <li>Smart contracts are not yet deployed to mainnet</li>
                 <li>Some features operate in "mock mode" for development</li>
               </ul>
@@ -140,7 +140,7 @@ export default function DocsPage() {
                   <div className="flex-1 pb-8">
                     <h4 className="font-semibold mb-1">Phase 2: Smart Contract Deployment</h4>
                     <p className="text-sm text-muted-foreground">
-                      Deploy $MINT token, Track NFT contract, and Royalty Engine to mainnet
+                      Deploy $WAVE token, Track NFT contract, and Royalty Engine to mainnet
                     </p>
                   </div>
                 </div>
@@ -210,7 +210,7 @@ export default function DocsPage() {
               <div>
                 <h4 className="font-semibold mb-2">How much can I earn per stream?</h4>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  The exact rate is still being determined for mainnet launch. In the MVP, you earn between 0.1-1 $MINT
+                  The exact rate is still being determined for mainnet launch. In the MVP, you earn between 0.1-1 $WAVE
                   per stream for testing purposes.
                 </p>
               </div>

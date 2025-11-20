@@ -2,275 +2,271 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAccount } from "wagmi"
 import { PageShell } from "@/components/page-shell"
-import { GradientText } from "@/components/gradient-text"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { uploadTrackAssets } from "@/lib/storage"
-import { mockMintTrack, isWeb3MockMode } from "@/lib/mock/web3Mock"
 import { useTracksStore } from "@/store/tracks"
-import { z } from "zod"
-
-const uploadSchema = z.object({
-  title: z.string().min(1, "Title is required").max(100),
-  description: z.string().min(10, "Description must be at least 10 characters").max(500),
-  genre: z.string().min(1, "Genre is required"),
-})
+import { Upload, Music, Image as ImageIcon, Loader2, CheckCircle2 } from "lucide-react"
+import { GradientText } from "@/components/gradient-text"
 
 export default function UploadPage() {
   const router = useRouter()
   const { address, isConnected } = useAccount()
   const addTrack = useTracksStore((state) => state.addTrack)
 
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadStep, setUploadStep] = useState(0) // 0: idle, 1: uploading files, 2: minting, 3: success
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     genre: "",
   })
+
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isUploading, setIsUploading] = useState(false)
+
+  const audioInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "audio" | "cover") => {
+    if (e.target.files && e.target.files[0]) {
+      if (type === "audio") setAudioFile(e.target.files[0])
+      else setCoverFile(e.target.files[0])
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Validate form
-    try {
-      uploadSchema.parse(formData)
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const newErrors: Record<string, string> = {}
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            newErrors[err.path[0].toString()] = err.message
-          }
-        })
-        setErrors(newErrors)
-        return
-      }
-    }
-
-    if (!audioFile) {
-      setErrors({ ...errors, audio: "Audio file is required" })
-      return
-    }
-
-    // In mock mode, we don't need a wallet
-    const artistAddress = address || "0x0000000000000000000000000000000000000000"
+    if (!isConnected || !address) return
+    if (!audioFile || !coverFile) return
 
     setIsUploading(true)
-    setErrors({})
+    setUploadStep(1)
 
     try {
-      // Step 1: Upload assets
-      const uploadResult = await uploadTrackAssets({
-        audioFile,
-        coverFile: coverFile || undefined,
-        metadata: {
-          title: formData.title,
-          description: formData.description,
-          genre: formData.genre,
-          artist: artistAddress,
-        },
-      })
+      // Simulate file upload delay
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      // Step 2: Mint track NFT
-      const mintResult = await mockMintTrack(uploadResult.metadataUri, artistAddress)
+      setUploadStep(2)
+      // Simulate minting delay
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      // Step 3: Store track in state
+      // Create track object
       const newTrack = {
-        id: mintResult.tokenId,
+        id: Math.random().toString(36).substring(7),
         title: formData.title,
         description: formData.description,
         genre: formData.genre,
-        artist: artistAddress.slice(0, 6) + "..." + artistAddress.slice(-4),
-        walletAddress: artistAddress,
-        coverUrl: uploadResult.coverUrl,
-        audioUrl: uploadResult.audioUrl,
-        metadataUri: uploadResult.metadataUri,
-        tokenId: mintResult.tokenId,
+        artist: address,
+        walletAddress: address,
+        coverUrl: URL.createObjectURL(coverFile), // Mock URL
+        audioUrl: URL.createObjectURL(audioFile), // Mock URL
+        metadataUri: "ipfs://mock-uri",
         plays: 0,
-        earnings: "0.00",
+        earnings: "0",
         createdAt: new Date().toISOString(),
       }
 
       addTrack(newTrack)
+      setUploadStep(3)
 
-      // Redirect to track page
-      router.push(`/tracks/${mintResult.tokenId}`)
+      // Redirect after success
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 2000)
     } catch (error) {
       console.error("Upload failed:", error)
-      setErrors({ form: "Upload failed. Please try again." })
-    } finally {
       setIsUploading(false)
+      setUploadStep(0)
     }
+  }
+
+  if (!isConnected) {
+    return (
+      <PageShell>
+        <div className="container mx-auto px-4 py-32">
+          <Card className="max-w-md mx-auto text-center glass-card border-mint/20">
+            <CardContent className="pt-12 pb-12 space-y-6">
+              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-mint to-violet flex items-center justify-center shadow-lg shadow-mint/20 animate-pulse">
+                <Upload className="w-10 h-10 text-white" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold">Connect to Upload</h1>
+                <p className="text-muted-foreground">
+                  You need to connect your wallet to upload and mint tracks.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </PageShell>
+    )
   }
 
   return (
     <PageShell>
-      <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <div className="space-y-8">
-          {/* Header */}
-          <div className="space-y-4">
-            <Badge variant="outline">Upload & Mint</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold">
-              Upload Your <GradientText>Music</GradientText>
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold mb-2">
+              <GradientText>Upload New Track</GradientText>
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Mint your tracks as NFTs and start earning $MINT tokens from streams.
+            <p className="text-muted-foreground">
+              Upload your music, mint it as an NFT, and start earning.
             </p>
           </div>
 
-          {/* Wallet Warning */}
-          {!isConnected && !isWeb3MockMode() && (
-            <Card className="border-mint/50">
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">
-                  Connect your wallet to mint tracks on-chain. Or continue in mock mode to test the platform.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Upload Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Track Details</CardTitle>
-              <CardDescription>Fill in your track information. All fields are required.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Title */}
-                <div className="space-y-2">
-                  <Label htmlFor="title">Track Title *</Label>
-                  <Input
-                    id="title"
-                    placeholder="Enter track title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  />
-                  {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description *</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Tell us about your track..."
-                    rows={4}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                  {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
-                </div>
-
-                {/* Genre */}
-                <div className="space-y-2">
-                  <Label htmlFor="genre">Genre *</Label>
-                  <Select value={formData.genre} onValueChange={(value) => setFormData({ ...formData, genre: value })}>
-                    <SelectTrigger id="genre">
-                      <SelectValue placeholder="Select a genre" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hip-hop">Hip Hop</SelectItem>
-                      <SelectItem value="rap">Rap</SelectItem>
-                      <SelectItem value="r&b">R&B</SelectItem>
-                      <SelectItem value="pop">Pop</SelectItem>
-                      <SelectItem value="rock">Rock</SelectItem>
-                      <SelectItem value="electronic">Electronic</SelectItem>
-                      <SelectItem value="jazz">Jazz</SelectItem>
-                      <SelectItem value="classical">Classical</SelectItem>
-                      <SelectItem value="indie">Indie</SelectItem>
-                      <SelectItem value="folk">Folk</SelectItem>
-                      <SelectItem value="country">Country</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.genre && <p className="text-sm text-destructive">{errors.genre}</p>}
-                </div>
-
-                {/* Audio File */}
-                <div className="space-y-2">
-                  <Label htmlFor="audio">Audio File * (MP3, WAV)</Label>
-                  <Input
-                    id="audio"
-                    type="file"
-                    accept="audio/mp3,audio/wav,audio/mpeg"
-                    onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-                  />
-                  {audioFile && <p className="text-sm text-muted-foreground">Selected: {audioFile.name}</p>}
-                  {errors.audio && <p className="text-sm text-destructive">{errors.audio}</p>}
-                </div>
-
-                {/* Cover Image */}
-                <div className="space-y-2">
-                  <Label htmlFor="cover">Cover Art (Optional - JPG, PNG)</Label>
-                  <Input
-                    id="cover"
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png"
-                    onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
-                  />
-                  {coverFile && <p className="text-sm text-muted-foreground">Selected: {coverFile.name}</p>}
-                </div>
-
-                {/* Form Error */}
-                {errors.form && (
-                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                    <p className="text-sm text-destructive">{errors.form}</p>
+          <Card className="glass-card border-white/10">
+            <CardContent className="p-8">
+              {uploadStep === 3 ? (
+                <div className="text-center py-12 space-y-6">
+                  <div className="w-20 h-20 mx-auto rounded-full bg-mint/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-10 h-10 text-mint" />
                   </div>
-                )}
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-bold text-white">Upload Successful!</h2>
+                    <p className="text-muted-foreground">Your track has been minted and is now live.</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground animate-pulse">Redirecting to dashboard...</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  {/* File Upload Section */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Audio Upload */}
+                    <div
+                      className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${audioFile ? "border-mint bg-mint/5" : "border-white/10 hover:border-white/20 hover:bg-white/5"
+                        }`}
+                      onClick={() => audioInputRef.current?.click()}
+                    >
+                      <input
+                        type="file"
+                        ref={audioInputRef}
+                        className="hidden"
+                        accept="audio/*"
+                        onChange={(e) => handleFileChange(e, "audio")}
+                      />
+                      <div className="w-12 h-12 mx-auto rounded-full bg-white/5 flex items-center justify-center mb-4">
+                        <Music className={`w-6 h-6 ${audioFile ? "text-mint" : "text-muted-foreground"}`} />
+                      </div>
+                      {audioFile ? (
+                        <div>
+                          <p className="font-medium text-white truncate max-w-[200px] mx-auto">{audioFile.name}</p>
+                          <p className="text-xs text-mint mt-1">Click to change</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="font-medium text-white">Upload Audio</p>
+                          <p className="text-xs text-muted-foreground mt-1">MP3, WAV, FLAC (Max 50MB)</p>
+                        </div>
+                      )}
+                    </div>
 
-                {/* Submit Button */}
-                <Button type="submit" size="lg" className="w-full" disabled={isUploading}>
-                  {isUploading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Uploading & Minting...
-                    </>
-                  ) : (
-                    "Upload & Mint Track"
-                  )}
-                </Button>
+                    {/* Cover Art Upload */}
+                    <div
+                      className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${coverFile ? "border-mint bg-mint/5" : "border-white/10 hover:border-white/20 hover:bg-white/5"
+                        }`}
+                      onClick={() => coverInputRef.current?.click()}
+                    >
+                      <input
+                        type="file"
+                        ref={coverInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(e, "cover")}
+                      />
+                      <div className="w-12 h-12 mx-auto rounded-full bg-white/5 flex items-center justify-center mb-4">
+                        <ImageIcon className={`w-6 h-6 ${coverFile ? "text-mint" : "text-muted-foreground"}`} />
+                      </div>
+                      {coverFile ? (
+                        <div>
+                          <p className="font-medium text-white truncate max-w-[200px] mx-auto">{coverFile.name}</p>
+                          <p className="text-xs text-mint mt-1">Click to change</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="font-medium text-white">Upload Cover Art</p>
+                          <p className="text-xs text-muted-foreground mt-1">JPG, PNG (Max 5MB)</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-                <p className="text-xs text-muted-foreground text-center">
-                  {isWeb3MockMode()
-                    ? "Running in mock mode - no blockchain transaction required"
-                    : "You will be prompted to sign a transaction to mint your NFT"}
-                </p>
-              </form>
-            </CardContent>
-          </Card>
+                  {/* Track Details */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Track Title</Label>
+                      <Input
+                        id="title"
+                        placeholder="Enter track title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        className="bg-white/5 border-white/10 focus:border-mint/50"
+                        required
+                      />
+                    </div>
 
-          {/* Info Card */}
-          <Card className="border-mint/30">
-            <CardContent className="pt-6">
-              <div className="space-y-3 text-sm">
-                <h4 className="font-semibold">What happens when you upload?</h4>
-                <ol className="space-y-2 list-decimal list-inside text-muted-foreground">
-                  <li>Your audio and cover art are uploaded to decentralized storage</li>
-                  <li>Track metadata is created following the ERC-721 standard</li>
-                  <li>An NFT is minted on Ethereum representing your track ownership</li>
-                  <li>Your track becomes available for streaming and earning $MINT</li>
-                </ol>
-              </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="genre">Genre</Label>
+                      <Select
+                        value={formData.genre}
+                        onValueChange={(value) => setFormData({ ...formData, genre: value })}
+                      >
+                        <SelectTrigger className="bg-white/5 border-white/10 focus:border-mint/50">
+                          <SelectValue placeholder="Select genre" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hiphop">Hip Hop</SelectItem>
+                          <SelectItem value="rnb">R&B</SelectItem>
+                          <SelectItem value="pop">Pop</SelectItem>
+                          <SelectItem value="electronic">Electronic</SelectItem>
+                          <SelectItem value="rock">Rock</SelectItem>
+                          <SelectItem value="jazz">Jazz</SelectItem>
+                          <SelectItem value="lofi">Lofi</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Tell us about your track..."
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="bg-white/5 border-white/10 focus:border-mint/50 min-h-[100px]"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-mint text-black hover:bg-mint/90 h-12 text-lg font-semibold shadow-lg shadow-mint/20"
+                    disabled={isUploading || !audioFile || !coverFile}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        {uploadStep === 1 ? "Uploading Files..." : "Minting NFT..."}
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-5 w-5" />
+                        Upload & Mint Track
+                      </>
+                    )}
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
