@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -145,6 +146,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
+                  <LanguageSwitcher />
                   <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-white">
                     <Link href="/auth/login">Login</Link>
                   </Button>
