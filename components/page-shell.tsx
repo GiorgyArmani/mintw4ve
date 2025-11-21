@@ -338,12 +338,12 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                   </Link>
                 </li>
                 <li>
-                  <Link href="https://github.com/mintwave" className="hover:text-foreground transition-colors">
+                  <Link href="https://github.com/mintw4ve" className="hover:text-foreground transition-colors">
                     GitHub
                   </Link>
                 </li>
                 <li>
-                  <Link href="https://discord.gg/mintwave" className="hover:text-foreground transition-colors">
+                  <Link href="https://discord.gg" className="hover:text-foreground transition-colors">
                     Discord
                   </Link>
                 </li>
@@ -386,7 +386,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                 </svg>
               </a>
               <a
-                href="https://github.com/mintwave"
+                href="https://github.com/mintw4ve"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <span className="sr-only">GitHub</span>
@@ -399,7 +399,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                 </svg>
               </a>
               <a
-                href="https://discord.gg/mintwave"
+                href="https://discord.gg"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <span className="sr-only">Discord</span>
