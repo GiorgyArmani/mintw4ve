@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
         const audio = formData.get('audio') as File;
         const artist = formData.get('artist') as string;
 
+        console.log('Upload: Received request', { title, artist, audioSize: audio?.size });
+
         if (!title || !audio) {
             return NextResponse.json(
                 { error: 'Title and audio file are required' },
@@ -41,46 +43,57 @@ export async function POST(req: NextRequest) {
         }
 
         // Upload to Supabase Storage
+        console.log('Upload: Uploading assets to storage...');
         const uploadResult = await uploadTrackAssets(formData);
+        console.log('Upload: Assets uploaded', uploadResult);
 
         // Store track metadata in Supabase database
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+        console.log('Upload: Checking DB config', { hasUrl: !!supabaseUrl, hasKey: !!supabaseKey });
+
         if (supabaseUrl && supabaseKey) {
             const supabase = createClient(supabaseUrl, supabaseKey);
 
-            // First, get or create artist
-            const { data: artistData, error: artistError } = await supabase
-                .from('artists')
+            // First, get or create profile (artist)
+            console.log('Upload: Checking profile for', artist);
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
                 .select('id')
-                .eq('wallet', artist)
+                .eq('wallet_address', artist)
                 .single();
 
             let artistId: string;
 
-            if (artistError || !artistData) {
-                // Create new artist
-                const { data: newArtist, error: createError } = await supabase
-                    .from('artists')
+            if (profileError || !profileData) {
+                console.log('Upload: Profile not found, creating new profile...', { profileError });
+                // Create new profile
+                const { data: newProfile, error: createError } = await supabase
+                    .from('profiles')
                     .insert({
-                        wallet: artist,
+                        wallet_address: artist,
+                        username: artist, // Use wallet address as default username
                         display_name: artist.slice(0, 6) + '...' + artist.slice(-4),
+                        is_artist: true,
                     })
                     .select('id')
                     .single();
 
                 if (createError) {
-                    console.error('Failed to create artist:', createError);
-                    throw new Error('Failed to create artist');
+                    console.error('Upload: Failed to create profile:', createError);
+                    throw new Error(`Failed to create artist profile: ${createError.message}`);
                 }
 
-                artistId = newArtist.id;
+                artistId = newProfile.id;
+                console.log('Upload: Created new profile', artistId);
             } else {
-                artistId = artistData.id;
+                artistId = profileData.id;
+                console.log('Upload: Found existing profile', artistId);
             }
 
             // Insert track
+            console.log('Upload: Inserting track for artist', artistId);
             const { data: trackData, error: trackError } = await supabase
                 .from('tracks')
                 .insert({
@@ -96,22 +109,26 @@ export async function POST(req: NextRequest) {
                 .single();
 
             if (trackError) {
-                console.error('Failed to insert track:', trackError);
-                throw new Error('Failed to save track metadata');
+                console.error('Upload: Failed to insert track:', trackError);
+                throw new Error(`Failed to save track metadata: ${trackError.message}`);
             }
+
+            console.log('Upload: Track saved successfully', trackData.id);
 
             return NextResponse.json({
                 success: true,
                 track: trackData,
                 ...uploadResult,
             });
+        } else {
+            console.error('Upload: Missing Supabase credentials, skipping DB insert');
+            // Fallback response if no database
+            return NextResponse.json({
+                success: true,
+                ...uploadResult,
+                warning: 'Track uploaded but not saved to database (missing credentials)'
+            });
         }
-
-        // Fallback response if no database
-        return NextResponse.json({
-            success: true,
-            ...uploadResult,
-        });
     } catch (error) {
         console.error('Upload error:', error);
         return NextResponse.json(

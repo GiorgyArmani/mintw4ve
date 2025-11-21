@@ -16,12 +16,31 @@ import { useTranslation } from "@/lib/i18n"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js"
+import { useAccount } from "wagmi"
 
 export function PageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const { t } = useTranslation()
+
+  const { address, isConnected } = useAccount()
+
+  // Sync wallet with database profile
+  useEffect(() => {
+    if (isConnected && address) {
+      fetch('/api/auth/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('Profile sync:', data)
+        })
+        .catch(err => console.error('Profile sync failed:', err))
+    }
+  }, [isConnected, address])
 
   useEffect(() => {
     const supabase = createClient()

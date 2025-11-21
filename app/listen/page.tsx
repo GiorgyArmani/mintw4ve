@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { PageShell } from "@/components/page-shell"
 import { GradientText } from "@/components/gradient-text"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,16 +9,16 @@ import { Button } from "@/components/ui/button"
 import { VinylRecord } from "@/components/vinyl-record"
 import { useTracksStore } from "@/store/tracks"
 import { useEarningsStore } from "@/store/earnings"
-import { Play, Pause, Heart, MessageCircle, Share2, DollarSign, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react"
+import { Play, Pause, Heart, MessageCircle, Share2, DollarSign, SkipBack, SkipForward, Volume2, VolumeX, Music, Upload } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
-import Image from "next/image"
 import Link from "next/link"
 import { useAccount } from "wagmi"
 import { useTranslation } from "@/lib/i18n"
 import { toast } from "sonner"
+import React from "react"
 
 export default function ListenPage() {
-    const { tracks } = useTracksStore()
+    const { tracks, fetchTracks, isLoading } = useTracksStore() // ✅ Added fetchTracks and isLoading
     const { address, isConnected } = useAccount()
     const { t } = useTranslation()
     const { awardStreamEarnings } = useEarningsStore()
@@ -30,11 +30,17 @@ export default function ListenPage() {
     const [volume, setVolume] = useState(0.7)
     const [isMuted, setIsMuted] = useState(false)
     const [hasEarnedForCurrentTrack, setHasEarnedForCurrentTrack] = useState(false)
+    const [selectedGenre, setSelectedGenre] = useState("all")
 
     const audioRef = useRef<HTMLAudioElement>(null)
 
-    // Genre list with translations
-    const GENRES = [
+    // ✅ Fetch tracks on mount
+    useEffect(() => {
+        fetchTracks()
+    }, [fetchTracks])
+
+    // Memoize genre list - create once, not on every render
+    const GENRES = useMemo(() => [
         { key: "all", label: t.listen.genres.all },
         { key: "Hip-Hop", label: t.listen.genres.hiphop },
         { key: "Electronic", label: t.listen.genres.electronic },
@@ -43,14 +49,27 @@ export default function ListenPage() {
         { key: "R&B", label: t.listen.genres.rnb },
         { key: "Jazz", label: t.listen.genres.jazz },
         { key: "Indie", label: t.listen.genres.indie },
-    ]
+    ], [t])
 
-    const [selectedGenre, setSelectedGenre] = useState("all")
-
-    const filteredTracks = selectedGenre === "all" ? tracks : tracks.filter((track) => track.genre === selectedGenre)
+    // Memoize filtered tracks
+    const filteredTracks = useMemo(() => {
+        return selectedGenre === "all"
+            ? tracks
+            : tracks.filter((track) => track.genre === selectedGenre)
+    }, [tracks, selectedGenre])
 
     // Check if current track belongs to the connected user
-    const isOwnTrack = currentTrack && address && currentTrack.artist.toLowerCase() === address.toLowerCase()
+    const isOwnTrack = useMemo(() => {
+        return currentTrack && address && currentTrack.artist.toLowerCase() === address.toLowerCase()
+    }, [currentTrack, address])
+
+    // Format time - memoized function
+    const formatTime = useCallback((seconds: number) => {
+        if (isNaN(seconds)) return '0:00'
+        const mins = Math.floor(seconds / 60)
+        const secs = Math.floor(seconds % 60)
+        return `${mins}:${secs.toString().padStart(2, '0')}`
+    }, [])
 
     // Handle audio element updates
     useEffect(() => {
@@ -60,6 +79,7 @@ export default function ListenPage() {
 
         // Load new track
         if (currentTrack) {
+            console.log('🎵 Loading track:', currentTrack.title, 'URL:', currentTrack.audioUrl) // Debug log
             audio.src = currentTrack.audioUrl
             audio.volume = volume
             if (isPlaying) {
@@ -96,8 +116,8 @@ export default function ListenPage() {
         }
     }, [volume, isMuted])
 
-    // Audio event handlers
-    const handleTimeUpdate = () => {
+    // Audio event handlers - memoized
+    const handleTimeUpdate = useCallback(() => {
         if (audioRef.current) {
             setCurrentTime(audioRef.current.currentTime)
 
@@ -131,22 +151,41 @@ export default function ListenPage() {
                 })
             }
         }
-    }
+    }, [hasEarnedForCurrentTrack, currentTrack, isOwnTrack, isConnected, awardStreamEarnings])
 
-    const handleLoadedMetadata = () => {
+    const handleLoadedMetadata = useCallback(() => {
         if (audioRef.current) {
             setDuration(audioRef.current.duration)
         }
-    }
+    }, [])
 
-    const handleEnded = () => {
+    const playNextTrack = useCallback(() => {
+        if (!currentTrack) return
+        const currentIndex = filteredTracks.findIndex(t => t.id === currentTrack.id)
+        if (currentIndex < filteredTracks.length - 1) {
+            const nextTrack = filteredTracks[currentIndex + 1]
+            setCurrentTrack(nextTrack)
+            setIsPlaying(true)
+            setHasEarnedForCurrentTrack(false)
+            setCurrentTime(0)
+
+            if (address && nextTrack.artist.toLowerCase() === address.toLowerCase()) {
+                toast.info('🎧 Playing your track', {
+                    description: 'Preview mode - no earnings for own music',
+                    duration: 3000
+                })
+            }
+        }
+    }, [currentTrack, filteredTracks, address])
+
+    const handleEnded = useCallback(() => {
         setIsPlaying(false)
         setHasEarnedForCurrentTrack(false)
-        // Auto-play next track
         playNextTrack()
-    }
+    }, [playNextTrack])
 
-    const handlePlayTrack = (track: any) => {
+    const handlePlayTrack = useCallback((track: any) => {
+        console.log('🎵 Play button clicked for:', track.title) // Debug log
         if (currentTrack?.id === track.id) {
             setIsPlaying(!isPlaying)
         } else {
@@ -163,37 +202,46 @@ export default function ListenPage() {
                 })
             }
         }
-    }
+    }, [currentTrack, isPlaying, address])
 
-    const handleSeek = (value: number[]) => {
+    const handleSeek = useCallback((value: number[]) => {
         if (audioRef.current) {
             audioRef.current.currentTime = value[0]
             setCurrentTime(value[0])
         }
-    }
+    }, [])
 
-    const playNextTrack = () => {
-        if (!currentTrack) return
-        const currentIndex = filteredTracks.findIndex(t => t.id === currentTrack.id)
-        if (currentIndex < filteredTracks.length - 1) {
-            handlePlayTrack(filteredTracks[currentIndex + 1])
-        }
-    }
-
-    const playPreviousTrack = () => {
+    const playPreviousTrack = useCallback(() => {
         if (!currentTrack) return
         const currentIndex = filteredTracks.findIndex(t => t.id === currentTrack.id)
         if (currentIndex > 0) {
-            handlePlayTrack(filteredTracks[currentIndex - 1])
-        }
-    }
+            const prevTrack = filteredTracks[currentIndex - 1]
+            setCurrentTrack(prevTrack)
+            setIsPlaying(true)
+            setHasEarnedForCurrentTrack(false)
+            setCurrentTime(0)
 
-    const formatTime = (seconds: number) => {
-        if (isNaN(seconds)) return '0:00'
-        const mins = Math.floor(seconds / 60)
-        const secs = Math.floor(seconds % 60)
-        return `${mins}:${secs.toString().padStart(2, '0')}`
-    }
+            if (address && prevTrack.artist.toLowerCase() === address.toLowerCase()) {
+                toast.info('🎧 Playing your track', {
+                    description: 'Preview mode - no earnings for own music',
+                    duration: 3000
+                })
+            }
+        }
+    }, [currentTrack, filteredTracks, address])
+
+    const toggleMute = useCallback(() => {
+        setIsMuted(!isMuted)
+    }, [isMuted])
+
+    const togglePlayPause = useCallback(() => {
+        setIsPlaying(!isPlaying)
+    }, [isPlaying])
+
+    const handleVolumeChange = useCallback((value: number[]) => {
+        setVolume(value[0] / 100)
+        setIsMuted(false)
+    }, [])
 
     return (
         <PageShell>
@@ -234,9 +282,26 @@ export default function ListenPage() {
 
                 {/* Tracks Grid with Vinyl Records */}
                 <section className="container mx-auto px-4">
-                    {filteredTracks.length === 0 ? (
+                    {isLoading ? (
                         <div className="text-center py-20">
-                            <p className="text-muted-foreground text-lg">{t.listen.noTracks}</p>
+                            <div className="w-16 h-16 border-4 border-mint/30 border-t-mint rounded-full animate-spin mx-auto mb-4" />
+                            <p className="text-muted-foreground">Loading tracks from MINTWAVE...</p>
+                        </div>
+                    ) : filteredTracks.length === 0 ? (
+                        <div className="text-center py-20">
+                            <div className="w-16 h-16 rounded-full bg-mint/10 flex items-center justify-center mx-auto mb-4">
+                                <Music className="w-8 h-8 text-mint" />
+                            </div>
+                            <p className="text-muted-foreground text-lg mb-2">{t.listen.noTracks}</p>
+                            <p className="text-sm text-muted-foreground mb-6">
+                                Be the first to upload music to MINTWAVE!
+                            </p>
+                            <Button asChild className="bg-mint text-black hover:bg-mint/90">
+                                <Link href="/upload">
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Upload Your Music
+                                </Link>
+                            </Button>
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -244,59 +309,15 @@ export default function ListenPage() {
                                 const isUserTrack = address && track.artist.toLowerCase() === address.toLowerCase()
 
                                 return (
-                                    <Card key={track.id} className="glass-card glass-hover group cursor-pointer" onClick={() => handlePlayTrack(track)}>
-                                        <CardContent className="p-0">
-                                            {/* Vinyl Record */}
-                                            <div className="relative aspect-square overflow-hidden rounded-t-lg p-2 sm:p-4 bg-gradient-to-br from-black/40 to-black/80">
-                                                <VinylRecord
-                                                    coverUrl={track.coverUrl || "/placeholder.svg"}
-                                                    isPlaying={currentTrack?.id === track.id && isPlaying}
-                                                    size="md"
-                                                    className="mx-auto w-full h-full"
-                                                />
-                                                {/* Now Playing Badge */}
-                                                {currentTrack?.id === track.id && isPlaying && (
-                                                    <div className="absolute top-2 right-2 sm:top-6 sm:right-6">
-                                                        <Badge className="bg-mint text-black text-xs">
-                                                            {isUserTrack ? 'Preview' : t.listen.playing}
-                                                        </Badge>
-                                                    </div>
-                                                )}
-                                                {/* Your Track Badge */}
-                                                {isUserTrack && currentTrack?.id !== track.id && (
-                                                    <div className="absolute top-2 right-2 sm:top-6 sm:right-6">
-                                                        <Badge className="bg-violet/80 text-white text-xs">
-                                                            Your Track
-                                                        </Badge>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Track Info */}
-                                            <div className="p-2 sm:p-4 space-y-1 sm:space-y-2">
-                                                <h3 className="font-semibold text-white truncate text-sm sm:text-base">{track.title}</h3>
-                                                <Link
-                                                    href={`/artist/${track.artist}`}
-                                                    className="text-xs sm:text-sm text-muted-foreground hover:text-mint transition-colors truncate block"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    {isUserTrack ? 'You' : track.artist}
-                                                </Link>
-
-                                                {/* Social Stats */}
-                                                <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground pt-1 sm:pt-2">
-                                                    <div className="flex items-center gap-1">
-                                                        <Heart className="w-3 h-3" />
-                                                        <span>{track.like_count || 0}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <MessageCircle className="w-3 h-3" />
-                                                        <span>{track.comment_count || 0}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                    <TrackCard
+                                        key={track.id}
+                                        track={track}
+                                        isUserTrack={isUserTrack}
+                                        isPlaying={currentTrack?.id === track.id && isPlaying}
+                                        onPlay={handlePlayTrack}
+                                        t={t}
+                                        address={address}
+                                    />
                                 )
                             })}
                         </div>
@@ -337,7 +358,6 @@ export default function ListenPage() {
                             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                                 <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0">
                                     <VinylRecord coverUrl={currentTrack.coverUrl || "/placeholder.svg"} isPlaying={isPlaying} size="sm" />
-                                    {/* Preview Mode Indicator */}
                                     {isOwnTrack && (
                                         <div className="absolute -top-1 -right-1">
                                             <Badge className="bg-violet/80 text-white text-[10px] px-1 py-0">
@@ -374,7 +394,7 @@ export default function ListenPage() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => setIsPlaying(!isPlaying)}
+                                    onClick={togglePlayPause}
                                     className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-mint text-black hover:bg-mint/90 flex-shrink-0"
                                 >
                                     {isPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5" fill="black" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" fill="black" />}
@@ -396,7 +416,7 @@ export default function ListenPage() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => setIsMuted(!isMuted)}
+                                    onClick={toggleMute}
                                     className="w-8 h-8 hover:text-mint"
                                 >
                                     {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -405,10 +425,7 @@ export default function ListenPage() {
                                     value={[isMuted ? 0 : volume * 100]}
                                     max={100}
                                     step={1}
-                                    onValueChange={(value) => {
-                                        setVolume(value[0] / 100)
-                                        setIsMuted(false)
-                                    }}
+                                    onValueChange={handleVolumeChange}
                                     className="w-full"
                                 />
                             </div>
@@ -438,3 +455,62 @@ export default function ListenPage() {
         </PageShell>
     )
 }
+
+// Extract TrackCard as a separate memoized component
+const TrackCard = React.memo(({ track, isUserTrack, isPlaying, onPlay, t, address }: any) => {
+    return (
+        <Card className="glass-card glass-hover group cursor-pointer" onClick={() => onPlay(track)}>
+            <CardContent className="p-0">
+                {/* Vinyl Record */}
+                <div className="relative aspect-square overflow-hidden rounded-t-lg p-2 sm:p-4 bg-gradient-to-br from-black/40 to-black/80">
+                    <VinylRecord
+                        coverUrl={track.coverUrl || "/placeholder.svg"}
+                        isPlaying={isPlaying}
+                        size="md"
+                        className="mx-auto w-full h-full"
+                    />
+                    {isPlaying && (
+                        <div className="absolute top-2 right-2 sm:top-6 sm:right-6">
+                            <Badge className="bg-mint text-black text-xs">
+                                {isUserTrack ? 'Preview' : t.listen.playing}
+                            </Badge>
+                        </div>
+                    )}
+                    {isUserTrack && !isPlaying && (
+                        <div className="absolute top-2 right-2 sm:top-6 sm:right-6">
+                            <Badge className="bg-violet/80 text-white text-xs">
+                                Your Track
+                            </Badge>
+                        </div>
+                    )}
+                </div>
+
+                {/* Track Info */}
+                <div className="p-2 sm:p-4 space-y-1 sm:space-y-2">
+                    <h3 className="font-semibold text-white truncate text-sm sm:text-base">{track.title}</h3>
+                    <Link
+                        href={`/artist/${track.artist}`}
+                        className="text-xs sm:text-sm text-muted-foreground hover:text-mint transition-colors truncate block"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {isUserTrack ? 'You' : track.artist}
+                    </Link>
+
+                    {/* Social Stats */}
+                    <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground pt-1 sm:pt-2">
+                        <div className="flex items-center gap-1">
+                            <Heart className="w-3 h-3" />
+                            <span>{track.like_count || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <MessageCircle className="w-3 h-3" />
+                            <span>{track.comment_count || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
+})
+
+TrackCard.displayName = 'TrackCard'

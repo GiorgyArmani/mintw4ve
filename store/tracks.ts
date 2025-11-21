@@ -1,69 +1,96 @@
-import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 export interface Track {
   id: string
   title: string
+  artist: string
+  displayName?: string
   description: string
   genre: string
-  artist: string
-  walletAddress: string
-  coverUrl: string
   audioUrl: string
-  metadataUri: string
-  tokenId?: string
-  plays: number
-  earnings: string
+  coverUrl?: string
+  metadataUri?: string
+  tokenId?: number
+  playCount?: number
   createdAt: string
-  // Social features
   like_count?: number
   comment_count?: number
   tip_count?: number
   total_tips?: number
 }
 
-
 interface TracksState {
   tracks: Track[]
+  isLoading: boolean
+  lastFetched: number | null
   addTrack: (track: Track) => void
-  getTrack: (id: string) => Track | undefined
-  getUserTracks: (walletAddress: string) => Track[]
-  incrementPlays: (id: string, earned: string) => void
+  fetchTracks: () => Promise<void>
+  getTrackById: (id: string) => Track | undefined
+  clearTracks: () => void
 }
 
-/**
- * Zustand store for tracks
- * In-memory storage for MVP, can be synced with Supabase later
- */
 export const useTracksStore = create<TracksState>()(
   persist(
     (set, get) => ({
       tracks: [],
+      isLoading: false,
+      lastFetched: null,
 
-      addTrack: (track) =>
+      /**
+       * Add a new track to the store
+       */
+      addTrack: (track: Track) => {
         set((state) => ({
-          tracks: [...state.tracks, track],
-        })),
+          tracks: [track, ...state.tracks],
+        }))
+      },
 
-      getTrack: (id) => get().tracks.find((t) => t.id === id),
+      /**
+       * Fetch tracks from API
+       */
+      fetchTracks: async () => {
+        const state = get()
 
-      getUserTracks: (walletAddress) => get().tracks.filter((t) => t.walletAddress === walletAddress),
+        // Cache for 5 minutes
+        const now = Date.now()
+        if (state.lastFetched && now - state.lastFetched < 5 * 60 * 1000) {
+          return
+        }
 
-      incrementPlays: (id, earned) =>
-        set((state) => ({
-          tracks: state.tracks.map((t) =>
-            t.id === id
-              ? {
-                ...t,
-                plays: t.plays + 1,
-                earnings: (Number.parseFloat(t.earnings) + Number.parseFloat(earned)).toFixed(2),
-              }
-              : t,
-          ),
-        })),
+        set({ isLoading: true })
+
+        try {
+          const response = await fetch('/api/tracks')
+          const data = await response.json()
+
+          set({
+            tracks: data.tracks || [],
+            isLoading: false,
+            lastFetched: now,
+          })
+        } catch (error) {
+          console.error('Failed to fetch tracks:', error)
+          set({ isLoading: false })
+        }
+      },
+
+      /**
+       * Get a specific track by ID
+       */
+      getTrackById: (id: string) => {
+        return get().tracks.find((track) => track.id === id)
+      },
+
+      /**
+       * Clear all tracks (for testing)
+       */
+      clearTracks: () => {
+        set({ tracks: [], lastFetched: null })
+      },
     }),
     {
-      name: "mintwave-tracks",
-    },
-  ),
+      name: 'mintwave-tracks',
+    }
+  )
 )

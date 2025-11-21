@@ -1,52 +1,83 @@
-import { NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET() {
-  try {
-    const supabase = await getSupabaseServerClient()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    const { data: tracks, error } = await supabase
-      .from("tracks")
-      .select("*")
-      .order("uploaded_at", { ascending: false })
-      .limit(50)
-
-    if (error) throw error
-
-    return NextResponse.json(tracks)
-  } catch (error) {
-    console.error("[v0] Error fetching tracks:", error)
-    return NextResponse.json({ error: "Failed to fetch tracks" }, { status: 500 })
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase credentials', { url: !!supabaseUrl, key: !!supabaseKey })
+    return NextResponse.json({
+      tracks: [],
+      debug: {
+        error: 'Missing Supabase credentials',
+        env: {
+          url: !!supabaseUrl,
+          key: !!supabaseKey
+        }
+      }
+    })
   }
-}
 
-export async function POST(request: Request) {
   try {
-    const supabase = await getSupabaseServerClient()
-    const body = await request.json()
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
-    const { data: track, error } = await supabase
-      .from("tracks")
-      .insert([
-        {
-          title: body.title,
-          artist_address: body.artistAddress,
-          artist_name: body.artistName,
-          description: body.description,
-          genre: body.genre,
-          audio_url: body.audioUrl,
-          cover_url: body.coverUrl,
-          duration: body.duration,
-        },
-      ])
-      .select()
-      .single()
+    // 1. Fetch tracks first
+    const { data: tracks, error: tracksError } = await supabase
+      .from('tracks')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-    if (error) throw error
+    if (tracksError) {
+      console.error('Failed to fetch tracks:', tracksError)
+      return NextResponse.json({ tracks: [], debug: { error: tracksError } })
+    }
 
-    return NextResponse.json(track, { status: 201 })
+    // 2. Fetch associated profiles (artists)
+    const artistIds = [...new Set(tracks?.map(t => t.artist_id).filter(Boolean))]
+
+    let profilesMap = new Map()
+
+    if (artistIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, wallet_address, display_name, avatar_url')
+        .in('id', artistIds)
+
+      if (profilesError) {
+        console.error('Failed to fetch profiles:', profilesError)
+      } else {
+        profiles?.forEach(profile => {
+          profilesMap.set(profile.id, profile)
+        })
+      }
+    }
+
+    // 3. Transform and join data
+    const formattedTracks = tracks?.map(track => {
+      const artist = profilesMap.get(track.artist_id)
+
+      return {
+        id: track.id,
+        title: track.title,
+        artist: artist?.wallet_address || 'Unknown',
+        displayName: artist?.display_name || 'Unknown Artist',
+        description: track.description || '',
+        genre: track.genre || 'Unknown',
+        audioUrl: track.audio_url,
+        coverUrl: track.cover_url,
+        metadataUri: track.metadata_uri,
+        tokenId: track.token_id,
+        playCount: track.play_count || 0,
+        createdAt: track.created_at,
+        like_count: track.like_count || 0,
+        comment_count: track.comment_count || 0,
+      }
+    }) || []
+
+    return NextResponse.json({ tracks: formattedTracks })
   } catch (error) {
-    console.error("[v0] Error creating track:", error)
-    return NextResponse.json({ error: "Failed to create track" }, { status: 500 })
+    console.error('Error fetching tracks:', error)
+    return NextResponse.json({ tracks: [], debug: { error: String(error) } })
   }
 }

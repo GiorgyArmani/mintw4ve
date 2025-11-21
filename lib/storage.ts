@@ -29,8 +29,7 @@ export async function uploadTrackAssets(
 
   // Check if Supabase is configured
   if (!supabaseUrl || !supabaseServiceKey) {
-    console.warn('Supabase not configured, using mock storage');
-    return mockUpload(audio, cover, title);
+    throw new Error('Supabase credentials missing. Cannot upload to storage.');
   }
 
   // Create Supabase client with service role key (server-side only)
@@ -42,6 +41,16 @@ export async function uploadTrackAssets(
     const audioPath = `tracks/${artist}/${audioFileName}`;
 
     const audioBuffer = await audio.arrayBuffer();
+
+    // Ensure bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find(b => b.name === 'mintwave-audio')) {
+      await supabase.storage.createBucket('mintwave-audio', { public: true });
+    }
+    if (!buckets?.find(b => b.name === 'mintwave-images')) {
+      await supabase.storage.createBucket('mintwave-images', { public: true });
+    }
+
     const { data: audioData, error: audioError } = await supabase.storage
       .from('mintwave-audio')
       .upload(audioPath, audioBuffer, {

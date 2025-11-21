@@ -52,30 +52,46 @@ export default function UploadPage() {
     setUploadStep(1)
 
     try {
-      // Simulate file upload delay
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const uploadFormData = new FormData()
+      uploadFormData.append('title', formData.title)
+      uploadFormData.append('description', formData.description)
+      uploadFormData.append('genre', formData.genre)
+      uploadFormData.append('artist', address)
+      uploadFormData.append('audio', audioFile)
+      uploadFormData.append('cover', coverFile)
 
-      setUploadStep(2)
-      // Simulate minting delay
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData,
+      })
 
-      // Create track object
-      const newTrack = {
-        id: Math.random().toString(36).substring(7),
-        title: formData.title,
-        description: formData.description,
-        genre: formData.genre,
-        artist: address,
-        walletAddress: address,
-        coverUrl: URL.createObjectURL(coverFile), // Mock URL
-        audioUrl: URL.createObjectURL(audioFile), // Mock URL
-        metadataUri: "ipfs://mock-uri",
-        plays: 0,
-        earnings: "0",
-        createdAt: new Date().toISOString(),
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed')
       }
 
-      addTrack(newTrack)
+      // Add the real track from the server response
+      if (data.track) {
+        addTrack({
+          id: data.track.id,
+          title: data.track.title,
+          artist: address,
+          displayName: 'You',
+          description: data.track.description,
+          genre: data.track.genre,
+          audioUrl: data.audioUrl,
+          coverUrl: data.coverUrl,
+          metadataUri: data.track.metadata_uri,
+          createdAt: data.track.created_at,
+          playCount: 0,
+          like_count: 0,
+          comment_count: 0,
+          tip_count: 0,
+          total_tips: 0
+        })
+      }
+
       setUploadStep(3)
 
       // Redirect after success
@@ -86,6 +102,7 @@ export default function UploadPage() {
       console.error("Upload failed:", error)
       setIsUploading(false)
       setUploadStep(0)
+      // You might want to add a toast here to show the error to the user
     }
   }
 
