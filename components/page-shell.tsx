@@ -75,8 +75,8 @@ export function PageShell({ children }: { children: React.ReactNode }) {
         <div className="container flex h-14 max-w-screen-2xl items-center">
           <div className="mr-4 hidden md:flex">
             <Link href="/" className="mr-6 flex items-center space-x-2">
-              <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={32} height={32} />
-              <span className="hidden font-bold sm:inline-block">MINTWAVE</span>
+              <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={32} height={32} className="dark:invert-0 invert" />
+              <span className="hidden font-bold sm:inline-block text-foreground">MINTWAVE</span>
             </Link>
             <nav className="flex items-center gap-6 text-sm font-medium">
               <Link
@@ -148,14 +148,14 @@ export function PageShell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-4">
               {user ? (
                 <div className="flex items-center gap-4">
-                  <span className="hidden sm:inline-block text-xs text-muted-foreground bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                  <span className="hidden sm:inline-block text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full border border-border">
                     {user.email}
                   </span>
                   <Button
                     onClick={handleSignOut}
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground hover:text-white hover:bg-white/10"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted"
                   >
                     {t.auth.signout}
                   </Button>
@@ -164,16 +164,16 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-3">
                   <ModeToggle />
                   <LanguageSwitcher />
-                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-white hidden md:flex">
+                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hidden md:flex">
                     <Link href="/auth/login">{t.auth.login}</Link>
                   </Button>
-                  <Button asChild size="sm" className="bg-mint text-black hover:bg-mint/90 font-semibold shadow-lg shadow-mint/20 hidden md:flex">
+                  <Button asChild size="sm" className="bg-mint text-mint-foreground hover:bg-mint/90 font-semibold shadow-lg shadow-mint/20 hidden md:flex">
                     <Link href="/auth/sign-up">{t.auth.signup}</Link>
                   </Button>
                 </div>
               )}
 
-              <div className="h-6 w-px bg-white/10 mx-1 hidden md:block" />
+              <div className="h-6 w-px bg-border mx-1 hidden md:block" />
               <div className="hidden md:block">
                 <ConnectButton showBalance={false} accountStatus="avatar" chainStatus="icon" />
               </div>
@@ -183,19 +183,19 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                 <ConnectButton showBalance={false} accountStatus="avatar" chainStatus="icon" />
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                       <Menu className="h-6 w-6" />
                       <span className="sr-only">Open menu</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-[300px] glass border-l border-white/10">
-                    <SheetTitle className="text-lg font-bold mb-4">Menu</SheetTitle>
+                  <SheetContent side="right" className="w-[300px] bg-background border-l border-border">
+                    <SheetTitle className="text-lg font-bold mb-4 text-foreground">Menu</SheetTitle>
                     <nav className="flex flex-col gap-4">
                       <Link
                         href="/"
                         className={cn(
                           "text-lg font-medium transition-colors hover:text-mint",
-                          pathname === "/" ? "text-white" : "text-muted-foreground",
+                          pathname === "/" ? "text-foreground" : "text-muted-foreground",
                         )}
                       >
                         {t.nav.home}
@@ -204,7 +204,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                         href="/listen"
                         className={cn(
                           "text-lg font-medium transition-colors hover:text-mint",
-                          pathname === "/listen" ? "text-white" : "text-muted-foreground",
+                          pathname === "/listen" ? "text-foreground" : "text-muted-foreground",
                         )}
                       >
                         {t.nav.listen}
@@ -213,7 +213,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                         href="/docs"
                         className={cn(
                           "text-lg font-medium transition-colors hover:text-mint",
-                          pathname === "/docs" ? "text-white" : "text-muted-foreground",
+                          pathname === "/docs" ? "text-foreground" : "text-muted-foreground",
                         )}
                       >
                         {t.nav.docs}
@@ -224,7 +224,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                             href="/dashboard"
                             className={cn(
                               "text-lg font-medium transition-colors hover:text-mint",
-                              pathname === "/dashboard" ? "text-white" : "text-muted-foreground",
+                              pathname === "/dashboard" ? "text-foreground" : "text-muted-foreground",
                             )}
                           >
                             {t.nav.dashboard}
@@ -233,7 +233,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                             href="/market"
                             className={cn(
                               "text-lg font-medium transition-colors hover:text-mint",
-                              pathname === "/market" ? "text-white" : "text-muted-foreground",
+                              pathname === "/market" ? "text-foreground" : "text-muted-foreground",
                             )}
                           >
                             {t.nav.marketplace}
@@ -242,7 +242,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                             href="/upload"
                             className={cn(
                               "text-lg font-medium transition-colors hover:text-mint",
-                              pathname === "/upload" ? "text-white" : "text-muted-foreground",
+                              pathname === "/upload" ? "text-foreground" : "text-muted-foreground",
                             )}
                           >
                             {t.nav.upload}
@@ -250,7 +250,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                           <Button
                             onClick={handleSignOut}
                             variant="ghost"
-                            className="justify-start px-0 text-lg font-medium text-muted-foreground hover:text-white hover:bg-transparent"
+                            className="justify-start px-0 text-lg font-medium text-muted-foreground hover:text-foreground hover:bg-transparent"
                           >
                             {t.auth.signout}
                           </Button>
@@ -259,7 +259,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                         <>
                           <Link
                             href="/auth/login"
-                            className="text-lg font-medium text-muted-foreground hover:text-white transition-colors"
+                            className="text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
                           >
                             {t.auth.login}
                           </Link>
@@ -284,13 +284,13 @@ export function PageShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="border-t border-border/30">
+      <footer className="border-t border-border/30 bg-background">
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Brand */}
             <div className="space-y-4">
               <div className="flex items-center">
-                <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={120} height={40} />
+                <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={120} height={40} className="dark:invert-0 invert" />
               </div>
               <p className="text-sm text-muted-foreground">{t.footer.tagline}</p>
               <p className="text-xs text-muted-foreground">{t.footer.description}</p>
@@ -298,7 +298,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
 
             {/* Platform */}
             <div>
-              <h3 className="font-semibold mb-4">{t.footer.platform}</h3>
+              <h3 className="font-semibold mb-4 text-foreground">{t.footer.platform}</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/upload" className="hover:text-foreground transition-colors">
@@ -325,7 +325,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
 
             {/* Resources */}
             <div>
-              <h3 className="font-semibold mb-4">{t.footer.resources}</h3>
+              <h3 className="font-semibold mb-4 text-foreground">{t.footer.resources}</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/docs" className="hover:text-foreground transition-colors">
@@ -352,7 +352,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
 
             {/* Legal */}
             <div>
-              <h3 className="font-semibold mb-4">{t.footer.legal}</h3>
+              <h3 className="font-semibold mb-4 text-foreground">{t.footer.legal}</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/privacy" className="hover:text-foreground transition-colors">
