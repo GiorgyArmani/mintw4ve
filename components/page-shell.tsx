@@ -46,94 +46,86 @@ export function PageShell({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push("/")
+    setUser(null)
     router.refresh()
   }
 
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/upload", label: "Upload" },
-    { href: "/market", label: "Marketplace" },
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/docs", label: "Docs" },
-  ]
-
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-white/5">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-between">
-            {/* Logo & Navigation */}
-            <div className="flex items-center gap-4 md:gap-8">
-              <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-                <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={100} height={28} className="md:w-[140px] md:h-[40px]" priority />
-              </Link>
-
-              <nav className="hidden md:flex items-center gap-6">
-                <Link
-                  href="/"
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-mint",
-                    pathname === "/" ? "text-white" : "text-muted-foreground",
-                  )}
-                >
-                  {t.nav.home}
-                </Link>
-                <Link
-                  href="/docs"
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-mint",
-                    pathname === "/docs" ? "text-white" : "text-muted-foreground",
-                  )}
-                >
-                  {t.nav.docs}
-                </Link>
-                <Link
-                  href="/listen"
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-mint",
-                    pathname === "/listen" ? "text-white" : "text-muted-foreground",
-                  )}
-                >
-                  {t.nav.listen}
-                </Link>
-
-                {user && (
-                  <>
-                    <Link
-                      href="/dashboard"
-                      className={cn(
-                        "text-sm font-medium transition-colors hover:text-mint",
-                        pathname === "/dashboard" ? "text-white" : "text-muted-foreground",
-                      )}
-                    >
-                      {t.nav.dashboard}
-                    </Link>
-                    <Link
-                      href="/market"
-                      className={cn(
-                        "text-sm font-medium transition-colors hover:text-mint",
-                        pathname === "/market" ? "text-white" : "text-muted-foreground",
-                      )}
-                    >
-                      {t.nav.marketplace}
-                    </Link>
-                    <Link
-                      href="/upload"
-                      className={cn(
-                        "text-sm font-medium transition-colors hover:text-mint",
-                        pathname === "/upload" ? "text-white" : "text-muted-foreground",
-                      )}
-                    >
-                      {t.nav.upload}
-                    </Link>
-                  </>
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 max-w-screen-2xl items-center">
+          <div className="mr-4 hidden md:flex">
+            <Link href="/" className="mr-6 flex items-center space-x-2">
+              <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={32} height={32} />
+              <span className="hidden font-bold sm:inline-block">MINTWAVE</span>
+            </Link>
+            <nav className="flex items-center gap-6 text-sm font-medium">
+              <Link
+                href="/"
+                className={cn(
+                  "transition-colors hover:text-foreground/80",
+                  pathname === "/" ? "text-foreground" : "text-foreground/60"
                 )}
-              </nav>
+              >
+                {t.nav.home}
+              </Link>
+              <Link
+                href="/listen"
+                className={cn(
+                  "transition-colors hover:text-foreground/80",
+                  pathname === "/listen" ? "text-foreground" : "text-foreground/60"
+                )}
+              >
+                {t.nav.listen}
+              </Link>
+              <Link
+                href="/docs"
+                className={cn(
+                  "transition-colors hover:text-foreground/80",
+                  pathname === "/docs" ? "text-foreground" : "text-foreground/60"
+                )}
+              >
+                {t.nav.docs}
+              </Link>
+              {user && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className={cn(
+                      "transition-colors hover:text-foreground/80",
+                      pathname === "/dashboard" ? "text-foreground" : "text-foreground/60"
+                    )}
+                  >
+                    {t.nav.dashboard}
+                  </Link>
+                  <Link
+                    href="/market"
+                    className={cn(
+                      "transition-colors hover:text-foreground/80",
+                      pathname === "/market" ? "text-foreground" : "text-foreground/60"
+                    )}
+                  >
+                    {t.nav.marketplace}
+                  </Link>
+                  <Link
+                    href="/upload"
+                    className={cn(
+                      "transition-colors hover:text-foreground/80",
+                      pathname === "/upload" ? "text-foreground" : "text-foreground/60"
+                    )}
+                  >
+                    {t.nav.upload}
+                  </Link>
+                </>
+              )}
+            </nav>
+          </div>
+
+          <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+            <div className="w-full flex-1 md:w-auto md:flex-none">
+              {/* Search or empty spacer */}
             </div>
 
-            {/* Right Side Actions */}
             <div className="flex items-center gap-4">
               {user ? (
                 <div className="flex items-center gap-4">
@@ -161,6 +153,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                   </Button>
                 </div>
               )}
+
               <div className="h-6 w-px bg-white/10 mx-1 hidden md:block" />
               <div className="hidden md:block">
                 <ConnectButton showBalance={false} accountStatus="avatar" chainStatus="icon" />

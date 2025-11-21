@@ -27,7 +27,6 @@ export const useWalletStore = create<WalletState>()(
             mockWaveBalance: Math.max(0, newBalance).toFixed(2),
           }
         }),
-
       increaseBalance: (amount: string) =>
         set((state) => ({
           mockWaveBalance: (Number.parseFloat(state.mockWaveBalance) + Number.parseFloat(amount)).toFixed(2),
