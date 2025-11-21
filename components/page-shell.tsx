@@ -7,8 +7,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
+import { Menu } from "lucide-react"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { ModeToggle } from "@/components/mode-toggle"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslation } from "@/lib/i18n"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js"
@@ -17,6 +21,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
+  const { t } = useTranslation()
 
   useEffect(() => {
     const supabase = createClient()
@@ -60,9 +65,9 @@ export function PageShell({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             {/* Logo & Navigation */}
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-4 md:gap-8">
               <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-                <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={140} height={40} priority />
+                <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={100} height={28} className="md:w-[140px] md:h-[40px]" priority />
               </Link>
 
               <nav className="hidden md:flex items-center gap-6">
@@ -73,7 +78,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                     pathname === "/" ? "text-white" : "text-muted-foreground",
                   )}
                 >
-                  Home
+                  {t.nav.home}
                 </Link>
                 <Link
                   href="/docs"
@@ -82,7 +87,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                     pathname === "/docs" ? "text-white" : "text-muted-foreground",
                   )}
                 >
-                  Docs
+                  {t.nav.docs}
                 </Link>
                 <Link
                   href="/listen"
@@ -91,7 +96,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                     pathname === "/listen" ? "text-white" : "text-muted-foreground",
                   )}
                 >
-                  Listen
+                  {t.nav.listen}
                 </Link>
 
                 {user && (
@@ -103,7 +108,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                         pathname === "/dashboard" ? "text-white" : "text-muted-foreground",
                       )}
                     >
-                      Dashboard
+                      {t.nav.dashboard}
                     </Link>
                     <Link
                       href="/market"
@@ -112,7 +117,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                         pathname === "/market" ? "text-white" : "text-muted-foreground",
                       )}
                     >
-                      Marketplace
+                      {t.nav.marketplace}
                     </Link>
                     <Link
                       href="/upload"
@@ -121,7 +126,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                         pathname === "/upload" ? "text-white" : "text-muted-foreground",
                       )}
                     >
-                      Upload
+                      {t.nav.upload}
                     </Link>
                   </>
                 )}
@@ -141,22 +146,123 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                     size="sm"
                     className="text-muted-foreground hover:text-white hover:bg-white/10"
                   >
-                    Sign Out
+                    {t.auth.signout}
                   </Button>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
+                  <ModeToggle />
                   <LanguageSwitcher />
-                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-white">
-                    <Link href="/auth/login">Login</Link>
+                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-white hidden md:flex">
+                    <Link href="/auth/login">{t.auth.login}</Link>
                   </Button>
-                  <Button asChild size="sm" className="bg-mint text-black hover:bg-mint/90 font-semibold shadow-lg shadow-mint/20">
-                    <Link href="/auth/sign-up">Sign Up</Link>
+                  <Button asChild size="sm" className="bg-mint text-black hover:bg-mint/90 font-semibold shadow-lg shadow-mint/20 hidden md:flex">
+                    <Link href="/auth/sign-up">{t.auth.signup}</Link>
                   </Button>
                 </div>
               )}
-              <div className="h-6 w-px bg-white/10 mx-1" />
-              <ConnectButton showBalance={false} accountStatus="avatar" chainStatus="icon" />
+              <div className="h-6 w-px bg-white/10 mx-1 hidden md:block" />
+              <div className="hidden md:block">
+                <ConnectButton showBalance={false} accountStatus="avatar" chainStatus="icon" />
+              </div>
+
+              {/* Mobile Menu */}
+              <div className="md:hidden flex items-center gap-2">
+                <ConnectButton showBalance={false} accountStatus="avatar" chainStatus="icon" />
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white">
+                      <Menu className="h-6 w-6" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[300px] glass border-l border-white/10">
+                    <SheetTitle className="text-lg font-bold mb-4">Menu</SheetTitle>
+                    <nav className="flex flex-col gap-4">
+                      <Link
+                        href="/"
+                        className={cn(
+                          "text-lg font-medium transition-colors hover:text-mint",
+                          pathname === "/" ? "text-white" : "text-muted-foreground",
+                        )}
+                      >
+                        {t.nav.home}
+                      </Link>
+                      <Link
+                        href="/listen"
+                        className={cn(
+                          "text-lg font-medium transition-colors hover:text-mint",
+                          pathname === "/listen" ? "text-white" : "text-muted-foreground",
+                        )}
+                      >
+                        {t.nav.listen}
+                      </Link>
+                      <Link
+                        href="/docs"
+                        className={cn(
+                          "text-lg font-medium transition-colors hover:text-mint",
+                          pathname === "/docs" ? "text-white" : "text-muted-foreground",
+                        )}
+                      >
+                        {t.nav.docs}
+                      </Link>
+                      {user ? (
+                        <>
+                          <Link
+                            href="/dashboard"
+                            className={cn(
+                              "text-lg font-medium transition-colors hover:text-mint",
+                              pathname === "/dashboard" ? "text-white" : "text-muted-foreground",
+                            )}
+                          >
+                            {t.nav.dashboard}
+                          </Link>
+                          <Link
+                            href="/market"
+                            className={cn(
+                              "text-lg font-medium transition-colors hover:text-mint",
+                              pathname === "/market" ? "text-white" : "text-muted-foreground",
+                            )}
+                          >
+                            {t.nav.marketplace}
+                          </Link>
+                          <Link
+                            href="/upload"
+                            className={cn(
+                              "text-lg font-medium transition-colors hover:text-mint",
+                              pathname === "/upload" ? "text-white" : "text-muted-foreground",
+                            )}
+                          >
+                            {t.nav.upload}
+                          </Link>
+                          <Button
+                            onClick={handleSignOut}
+                            variant="ghost"
+                            className="justify-start px-0 text-lg font-medium text-muted-foreground hover:text-white hover:bg-transparent"
+                          >
+                            {t.auth.signout}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Link
+                            href="/auth/login"
+                            className="text-lg font-medium text-muted-foreground hover:text-white transition-colors"
+                          >
+                            {t.auth.login}
+                          </Link>
+                          <Link
+                            href="/auth/sign-up"
+                            className="text-lg font-medium text-mint hover:text-mint/80 transition-colors"
+                          >
+                            {t.auth.signup}
+                          </Link>
+                        </>
+                      )}
+                    </nav>
+                  </SheetContent>
+                </Sheet>
+              </div>
             </div>
           </div>
         </div>
@@ -174,32 +280,32 @@ export function PageShell({ children }: { children: React.ReactNode }) {
               <div className="flex items-center">
                 <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={120} height={40} />
               </div>
-              <p className="text-sm text-muted-foreground">Mint your art. Ride your wave.</p>
-              <p className="text-xs text-muted-foreground">Decentralized music distribution on Ethereum.</p>
+              <p className="text-sm text-muted-foreground">{t.footer.tagline}</p>
+              <p className="text-xs text-muted-foreground">{t.footer.description}</p>
             </div>
 
             {/* Platform */}
             <div>
-              <h3 className="font-semibold mb-4">Platform</h3>
+              <h3 className="font-semibold mb-4">{t.footer.platform}</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/upload" className="hover:text-foreground transition-colors">
-                    Upload Music
+                    {t.nav.upload}
                   </Link>
                 </li>
                 <li>
                   <Link href="/market" className="hover:text-foreground transition-colors">
-                    Marketplace
+                    {t.nav.marketplace}
                   </Link>
                 </li>
                 <li>
                   <Link href="/dashboard" className="hover:text-foreground transition-colors">
-                    Dashboard
+                    {t.nav.dashboard}
                   </Link>
                 </li>
                 <li>
                   <Link href="/docs" className="hover:text-foreground transition-colors">
-                    How It Works
+                    {t.footer.howItWorks}
                   </Link>
                 </li>
               </ul>
@@ -207,16 +313,16 @@ export function PageShell({ children }: { children: React.ReactNode }) {
 
             {/* Resources */}
             <div>
-              <h3 className="font-semibold mb-4">Resources</h3>
+              <h3 className="font-semibold mb-4">{t.footer.resources}</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/docs" className="hover:text-foreground transition-colors">
-                    Documentation
+                    {t.footer.documentation}
                   </Link>
                 </li>
                 <li>
                   <Link href="/docs#faq" className="hover:text-foreground transition-colors">
-                    FAQ
+                    {t.footer.faq}
                   </Link>
                 </li>
                 <li>
@@ -234,21 +340,21 @@ export function PageShell({ children }: { children: React.ReactNode }) {
 
             {/* Legal */}
             <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
+              <h3 className="font-semibold mb-4">{t.footer.legal}</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/privacy" className="hover:text-foreground transition-colors">
-                    Privacy Policy
+                    {t.footer.privacy}
                   </Link>
                 </li>
                 <li>
                   <Link href="/terms" className="hover:text-foreground transition-colors">
-                    Terms of Service
+                    {t.footer.terms}
                   </Link>
                 </li>
                 <li>
                   <Link href="/licenses" className="hover:text-foreground transition-colors">
-                    Licenses
+                    {t.footer.licenses}
                   </Link>
                 </li>
               </ul>
@@ -256,7 +362,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="border-t border-border/30 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-muted-foreground">© 2025 MINTWAVE. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© 2025 MINTWAVE. {t.footer.rights}</p>
             <div className="flex items-center gap-4">
               <a
                 href="https://twitter.com/mintwave"

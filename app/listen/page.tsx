@@ -53,12 +53,12 @@ export default function ListenPage() {
                 <section className="relative py-20 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-mint/10 via-transparent to-transparent" />
                     <div className="container mx-auto px-4 relative">
-                        <div className="max-w-4xl mx-auto text-center space-y-6">
-                            <h1 className="text-5xl md:text-7xl font-bold">
+                        <div className="max-w-4xl mx-auto text-center space-y-4 md:space-y-6">
+                            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold">
                                 <GradientText>{t.listen.title}</GradientText>
                             </h1>
-                            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">{t.listen.subtitle}</p>
-                            {!isConnected && <p className="text-sm text-muted-foreground">{t.listen.connectWallet}</p>}
+                            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">{t.listen.subtitle}</p>
+                            {!isConnected && <p className="text-xs sm:text-sm text-muted-foreground px-4">{t.listen.connectWallet}</p>}
                         </div>
                     </div>
                 </section>
@@ -95,34 +95,34 @@ export default function ListenPage() {
                                 <Card key={track.id} className="glass-card glass-hover group cursor-pointer" onClick={() => handlePlayTrack(track)}>
                                     <CardContent className="p-0">
                                         {/* Vinyl Record */}
-                                        <div className="relative aspect-square overflow-hidden rounded-t-lg p-4 bg-gradient-to-br from-black/40 to-black/80">
+                                        <div className="relative aspect-square overflow-hidden rounded-t-lg p-2 sm:p-4 bg-gradient-to-br from-black/40 to-black/80">
                                             <VinylRecord
                                                 coverUrl={track.coverUrl || "/placeholder.svg"}
                                                 isPlaying={currentTrack?.id === track.id && isPlaying}
                                                 size="md"
-                                                className="mx-auto"
+                                                className="mx-auto w-full h-full"
                                             />
                                             {/* Now Playing Badge */}
                                             {currentTrack?.id === track.id && isPlaying && (
-                                                <div className="absolute top-6 right-6">
-                                                    <Badge className="bg-mint text-black">{t.listen.playing}</Badge>
+                                                <div className="absolute top-2 right-2 sm:top-6 sm:right-6">
+                                                    <Badge className="bg-mint text-black text-xs">{t.listen.playing}</Badge>
                                                 </div>
                                             )}
                                         </div>
 
                                         {/* Track Info */}
-                                        <div className="p-4 space-y-2">
-                                            <h3 className="font-semibold text-white truncate">{track.title}</h3>
+                                        <div className="p-2 sm:p-4 space-y-1 sm:space-y-2">
+                                            <h3 className="font-semibold text-white truncate text-sm sm:text-base">{track.title}</h3>
                                             <Link
                                                 href={`/artist/${track.artist}`}
-                                                className="text-sm text-muted-foreground hover:text-mint transition-colors truncate block"
+                                                className="text-xs sm:text-sm text-muted-foreground hover:text-mint transition-colors truncate block"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 {track.artist}
                                             </Link>
 
                                             {/* Social Stats */}
-                                            <div className="flex items-center gap-3 text-xs text-muted-foreground pt-2">
+                                            <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground pt-1 sm:pt-2">
                                                 <div className="flex items-center gap-1">
                                                     <Heart className="w-3 h-3" />
                                                     <span>{track.like_count || 0}</span>
@@ -144,35 +144,35 @@ export default function ListenPage() {
             {/* Persistent Audio Player */}
             {currentTrack && (
                 <div className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-white/10">
-                    <div className="container mx-auto px-4 py-4">
-                        <div className="flex items-center justify-between gap-4">
+                    <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
+                        <div className="flex items-center justify-between gap-2 sm:gap-4">
                             {/* Track Info with Vinyl */}
-                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                                <div className="relative w-14 h-14 flex-shrink-0">
+                            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                                <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0">
                                     <VinylRecord coverUrl={currentTrack.coverUrl || "/placeholder.svg"} isPlaying={isPlaying} size="sm" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <h4 className="font-semibold text-white truncate">{currentTrack.title}</h4>
-                                    <Link href={`/artist/${currentTrack.artist}`} className="text-sm text-muted-foreground hover:text-mint">
+                                    <h4 className="font-semibold text-white truncate text-sm sm:text-base">{currentTrack.title}</h4>
+                                    <Link href={`/artist/${currentTrack.artist}`} className="text-xs sm:text-sm text-muted-foreground hover:text-mint truncate block">
                                         {currentTrack.artist}
                                     </Link>
                                 </div>
                             </div>
 
                             {/* Controls */}
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 sm:gap-4">
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => setIsPlaying(!isPlaying)}
-                                    className="w-12 h-12 rounded-full bg-mint text-black hover:bg-mint/90"
+                                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-mint text-black hover:bg-mint/90 flex-shrink-0"
                                 >
-                                    {isPlaying ? <Pause className="w-5 h-5" fill="black" /> : <Play className="w-5 h-5 ml-0.5" fill="black" />}
+                                    {isPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5" fill="black" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" fill="black" />}
                                 </Button>
                             </div>
 
-                            {/* Actions */}
-                            <div className="hidden md:flex items-center gap-2">
+                            {/* Actions - Hidden on mobile */}
+                            <div className="hidden lg:flex items-center gap-2">
                                 <Button variant="ghost" size="icon" disabled={!isConnected} className="hover:text-mint">
                                     <Heart className="w-5 h-5" />
                                 </Button>

@@ -94,6 +94,27 @@ export const translations = {
             totalPlays: "Total Plays",
             totalEarnings: "Total Earnings",
         },
+        // Auth
+        auth: {
+            login: "Login",
+            signup: "Sign Up",
+            signout: "Sign Out",
+        },
+        // Footer
+        footer: {
+            tagline: "Mint your art. Ride your wave.",
+            description: "Decentralized music distribution on Ethereum.",
+            platform: "Platform",
+            resources: "Resources",
+            legal: "Legal",
+            howItWorks: "How It Works",
+            documentation: "Documentation",
+            faq: "FAQ",
+            privacy: "Privacy Policy",
+            terms: "Terms of Service",
+            licenses: "Licenses",
+            rights: "All rights reserved.",
+        },
     },
     es: {
         // Navegación
@@ -166,6 +187,27 @@ export const translations = {
             stats: "Estadísticas",
             totalPlays: "Reproducciones Totales",
             totalEarnings: "Ganancias Totales",
+        },
+        // Auth
+        auth: {
+            login: "Iniciar Sesión",
+            signup: "Registrarse",
+            signout: "Cerrar Sesión",
+        },
+        // Footer
+        footer: {
+            tagline: "Acuña tu arte. Monta tu ola.",
+            description: "Distribución de música descentralizada en Ethereum.",
+            platform: "Plataforma",
+            resources: "Recursos",
+            legal: "Legal",
+            howItWorks: "Cómo Funciona",
+            documentation: "Documentación",
+            faq: "Preguntas Frecuentes",
+            privacy: "Política de Privacidad",
+            terms: "Términos de Servicio",
+            licenses: "Licencias",
+            rights: "Todos los derechos reservados.",
         },
     },
 }

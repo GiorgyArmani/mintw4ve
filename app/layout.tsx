@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 
 import { Analytics } from "@vercel/analytics/next"
 import { Web3Provider } from "@/lib/web3-provider"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 import { Geist, Geist_Mono, Geist as V0_Font_Geist, Geist_Mono as V0_Font_Geist_Mono, Source_Serif_4 as V0_Font_Source_Serif_4 } from 'next/font/google'
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-  generator: 'v0.app'
+  generator: 'mintwave-devs'
 }
 
 export const viewport: Viewport = {
@@ -68,7 +69,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
-        <Web3Provider>{children}</Web3Provider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <Web3Provider>{children}</Web3Provider>
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

@@ -15,23 +15,29 @@ export function LanguageSwitcher() {
 
     const currentLanguage = languages.find((l) => l.code === language)
 
+    const handleLanguageChange = (lang: Language) => {
+        console.log("Changing language to:", lang)
+        setLanguage(lang)
+    }
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
+                <Button variant="ghost" size="sm" className="gap-2 hover:bg-white/10">
                     <Languages className="w-4 h-4" />
-                    <span className="hidden sm:inline">{currentLanguage?.flag}</span>
+                    <span className="text-sm font-medium">{currentLanguage?.flag}</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="glass border-white/10">
+            <DropdownMenuContent align="end" className="glass border-white/10 min-w-[150px]">
                 {languages.map((lang) => (
                     <DropdownMenuItem
                         key={lang.code}
-                        onClick={() => setLanguage(lang.code)}
-                        className={language === lang.code ? "bg-mint/10 text-mint" : ""}
+                        onClick={() => handleLanguageChange(lang.code)}
+                        className={language === lang.code ? "bg-mint/10 text-mint font-semibold" : "hover:bg-white/5"}
                     >
-                        <span className="mr-2">{lang.flag}</span>
-                        {lang.label}
+                        <span className="mr-2 text-lg">{lang.flag}</span>
+                        <span>{lang.label}</span>
+                        {language === lang.code && <span className="ml-auto text-mint">✓</span>}
                     </DropdownMenuItem>
                 ))}
             </DropdownMenuContent>

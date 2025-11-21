@@ -22,7 +22,7 @@ export default function HomePage() {
               <Image
                 src="/mintwave-logo.svg"
                 alt="MINTWAVE"
-                width={600}
+                width={500}
                 height={120}
                 className="drop-shadow-[0_0_50px_rgba(255,255,255,0.2)]"
                 priority
