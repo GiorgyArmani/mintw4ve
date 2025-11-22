@@ -28,6 +28,8 @@ interface TracksState {
   fetchTracks: () => Promise<void>
   getTrackById: (id: string) => Track | undefined
   clearTracks: () => void
+  removeTrack: (id: string) => void
+  updateTrack: (id: string, updates: Partial<Track>) => void
 }
 
 export const useTracksStore = create<TracksState>()(
@@ -87,6 +89,26 @@ export const useTracksStore = create<TracksState>()(
        */
       clearTracks: () => {
         set({ tracks: [], lastFetched: null })
+      },
+
+      /**
+       * Remove a track from the store
+       */
+      removeTrack: (id: string) => {
+        set((state) => ({
+          tracks: state.tracks.filter((track) => track.id !== id),
+        }))
+      },
+
+      /**
+       * Update a track in the store
+       */
+      updateTrack: (id: string, updates: Partial<Track>) => {
+        set((state) => ({
+          tracks: state.tracks.map((track) =>
+            track.id === id ? { ...track, ...updates } : track
+          ),
+        }))
       },
     }),
     {

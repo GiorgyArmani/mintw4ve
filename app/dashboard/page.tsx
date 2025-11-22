@@ -10,7 +10,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTracksStore } from "@/store/tracks"
 import { useWalletStore } from "@/store/wallet"
 import Link from "next/link"
-import { Play, TrendingUp, DollarSign, Music, Users, Calendar } from "lucide-react"
+import { Play, TrendingUp, DollarSign, Music, Users, Calendar, MoreVertical, Pencil, Trash2, Loader2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { GradientText } from "@/components/gradient-text"
@@ -27,6 +55,89 @@ export default function DashboardPage() {
     totalTracks: 0,
     avgPlaysPerTrack: 0,
   })
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [trackToDelete, setTrackToDelete] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editingTrack, setEditingTrack] = useState<any>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  const { removeTrack, updateTrack } = useTracksStore()
+
+  const handleDeleteClick = (trackId: string) => {
+    setTrackToDelete(trackId)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!trackToDelete) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/tracks/${trackToDelete}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-wallet-address': address || '',
+        },
+        body: JSON.stringify({ walletAddress: address }),
+      })
+
+      if (!response.ok) throw new Error('Failed to delete track')
+
+      removeTrack(trackToDelete)
+      toast.success("Track deleted successfully")
+    } catch (error) {
+      console.error('Error deleting track:', error)
+      toast.error("Failed to delete track")
+    } finally {
+      setIsDeleting(false)
+      setIsDeleteDialogOpen(false)
+      setTrackToDelete(null)
+    }
+  }
+
+  const handleEditClick = (track: any) => {
+    setEditingTrack({ ...track })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdateTrack = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingTrack) return
+
+    setIsUpdating(true)
+    try {
+      const response = await fetch(`/api/tracks/${editingTrack.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: editingTrack.title,
+          description: editingTrack.description,
+          genre: editingTrack.genre,
+          walletAddress: address,
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update track')
+
+      updateTrack(editingTrack.id, {
+        title: editingTrack.title,
+        description: editingTrack.description,
+        genre: editingTrack.genre,
+      })
+      toast.success("Track updated successfully")
+      setIsEditDialogOpen(false)
+    } catch (error) {
+      console.error('Error updating track:', error)
+      toast.error("Failed to update track")
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   useEffect(() => {
     const getUser = async () => {
@@ -44,9 +155,9 @@ export default function DashboardPage() {
       setUserTracks(myTracks)
 
       // Calculate stats
-      const totalPlays = myTracks.reduce((sum, track) => sum + track.plays, 0)
+      const totalPlays = myTracks.reduce((sum, track) => sum + (track.playCount || 0), 0)
       const totalEarnings = myTracks.reduce(
-        (sum, track) => sum + track.plays * 10, // 10 WAVE per play
+        (sum, track) => sum + (track.playCount || 0) * 10, // 10 WAVE per play
         0,
       )
       const avgPlays = myTracks.length > 0 ? totalPlays / myTracks.length : 0
@@ -199,18 +310,18 @@ export default function DashboardPage() {
                           <div className="flex flex-wrap items-center gap-6 text-sm">
                             <div className="flex items-center gap-2 text-white/80">
                               <Play className="w-4 h-4 text-mint" />
-                              <span className="font-medium">{track.plays}</span>
+                              <span className="font-medium">{track.playCount || 0}</span>
                               <span className="text-muted-foreground">plays</span>
                             </div>
                             <div className="flex items-center gap-2 text-white/80">
                               <DollarSign className="w-4 h-4 text-mint" />
-                              <span className="font-medium">{track.plays * 10}</span>
+                              <span className="font-medium">{(track.playCount || 0) * 10}</span>
                               <span className="text-muted-foreground">WAVE earned</span>
                             </div>
                             <div className="flex items-center gap-2 text-white/80">
                               <Calendar className="w-4 h-4 text-muted-foreground" />
                               <span className="text-muted-foreground">
-                                {new Date(track.uploadedAt).toLocaleDateString()}
+                                {new Date(track.createdAt).toLocaleDateString()}
                               </span>
                             </div>
                           </div>
@@ -218,9 +329,29 @@ export default function DashboardPage() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-3 w-full md:w-auto">
-                          <Button variant="outline" asChild className="flex-1 md:flex-none border-white/10 hover:bg-white/10 hover:text-white">
-                            <Link href={`/tracks/${track.id}`}>View Details</Link>
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" asChild className="border-white/10 hover:bg-white/10 hover:text-white">
+                              <Link href={`/tracks/${track.id}`}>View Details</Link>
+                            </Button>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-white hover:bg-white/10">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-black/90 border-white/10 text-white">
+                                <DropdownMenuItem onClick={() => handleEditClick(track)} className="hover:bg-white/10 cursor-pointer">
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Edit Track
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDeleteClick(track.id)} className="text-red-500 hover:bg-red-500/10 hover:text-red-400 cursor-pointer">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Track
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -261,11 +392,11 @@ export default function DashboardPage() {
                             </div>
                             <div>
                               <p className="font-medium text-white">{track.title}</p>
-                              <p className="text-sm text-muted-foreground">{track.plays} plays</p>
+                              <p className="text-sm text-muted-foreground">{track.playCount || 0} plays</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-mint">{track.plays * 10} WAVE</p>
+                            <p className="font-bold text-mint">{(track.playCount || 0) * 10} WAVE</p>
                           </div>
                         </div>
                       ))}
@@ -349,6 +480,94 @@ export default function DashboardPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </PageShell>
+
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-black/90 border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              This action cannot be undone. This will permanently delete your track
+              and remove it from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-white/10 text-white hover:bg-white/10 hover:text-white">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Track Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-black/90 border-white/10 text-white sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Track</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Make changes to your track details here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          {editingTrack && (
+            <form onSubmit={handleUpdateTrack} className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={editingTrack.title}
+                  onChange={(e) => setEditingTrack({ ...editingTrack, title: e.target.value })}
+                  className="bg-white/5 border-white/10 text-white focus:border-mint"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="genre">Genre</Label>
+                <Input
+                  id="genre"
+                  value={editingTrack.genre}
+                  onChange={(e) => setEditingTrack({ ...editingTrack, genre: e.target.value })}
+                  className="bg-white/5 border-white/10 text-white focus:border-mint"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={editingTrack.description}
+                  onChange={(e) => setEditingTrack({ ...editingTrack, description: e.target.value })}
+                  className="bg-white/5 border-white/10 text-white focus:border-mint min-h-[100px]"
+                />
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isUpdating} className="bg-mint text-black hover:bg-mint/90 w-full sm:w-auto">
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+    </PageShell >
   )
 }
