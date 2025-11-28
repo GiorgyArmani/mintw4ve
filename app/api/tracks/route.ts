@@ -60,6 +60,7 @@ export async function GET() {
       return {
         id: track.id,
         title: track.title,
+        artist_id: track.artist_id,
         artist: artist?.wallet_address || 'Unknown',
         displayName: artist?.display_name || 'Unknown Artist',
         description: track.description || '',

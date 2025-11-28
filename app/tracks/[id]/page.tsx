@@ -10,8 +10,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useTracksStore } from "@/store/tracks"
 import { useEarningsStore } from "@/store/earnings"
-import { Play, Pause, Heart, Share2, Music, Loader2 } from "lucide-react"
+import { Play, Pause, Heart, Share2, Music, Loader2, MessageCircle } from "lucide-react"
 import { VinylRecord } from "@/components/vinyl-record"
+import { CommentSection } from "@/components/comment-section"
 import Image from "next/image"
 import { toast } from "sonner"
 
@@ -306,6 +307,17 @@ export default function TrackDetailPage({ params }: { params: Promise<{ id: stri
                     Share
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Comments Section */}
+            <Card className="glass-card">
+              <CardContent className="pt-6">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-mint" />
+                  Comments
+                </h3>
+                <CommentSection trackId={track.id} initialCommentCount={track.comment_count} />
               </CardContent>
             </Card>
 

@@ -16,6 +16,7 @@ import { useAccount } from "wagmi"
 import { useTranslation } from "@/lib/i18n"
 import { toast } from "sonner"
 import React from "react"
+import { usePathname, useRouter } from 'next/navigation'
 
 export default function ListenPage() {
     const { tracks, fetchTracks, isLoading } = useTracksStore() // ✅ Added fetchTracks and isLoading
@@ -458,53 +459,88 @@ export default function ListenPage() {
 
 // Extract TrackCard as a separate memoized component
 const TrackCard = React.memo(({ track, isUserTrack, isPlaying, onPlay, t, address }: any) => {
+    const router = useRouter()
+
+    const handleCardClick = (e: React.MouseEvent) => {
+        // Prevent navigation if clicking on interactive elements
+        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
+            return
+        }
+        router.push(`/tracks/${track.id}`)
+    }
+
     return (
-        <Card className="glass-card glass-hover group cursor-pointer" onClick={() => onPlay(track)}>
+        <Card
+            className="glass-card glass-hover group cursor-pointer"
+            onClick={handleCardClick}
+        >
             <CardContent className="p-0">
-                {/* Vinyl Record */}
-                <div className="relative aspect-square overflow-hidden rounded-t-lg p-2 sm:p-4 bg-gradient-to-br from-black/40 to-black/80">
-                    <VinylRecord
-                        coverUrl={track.coverUrl || "/placeholder.svg"}
-                        isPlaying={isPlaying}
-                        size="md"
-                        className="mx-auto w-full h-full"
-                    />
-                    {isPlaying && (
-                        <div className="absolute top-2 right-2 sm:top-6 sm:right-6">
-                            <Badge className="bg-mint text-black text-xs">
-                                {isUserTrack ? 'Preview' : t.listen.playing}
-                            </Badge>
-                        </div>
-                    )}
-                    {isUserTrack && !isPlaying && (
-                        <div className="absolute top-2 right-2 sm:top-6 sm:right-6">
-                            <Badge className="bg-violet/80 text-white text-xs">
-                                Your Track
-                            </Badge>
-                        </div>
-                    )}
-                </div>
+                <div className="block">
+                    {/* Vinyl Record */}
+                    <div className="relative aspect-square overflow-hidden rounded-t-lg p-2 sm:p-4 bg-gradient-to-br from-black/40 to-black/80">
+                        <VinylRecord
+                            coverUrl={track.coverUrl || "/placeholder.svg"}
+                            isPlaying={isPlaying}
+                            size="md"
+                            className="mx-auto w-full h-full"
+                        />
 
-                {/* Track Info */}
-                <div className="p-2 sm:p-4 space-y-1 sm:space-y-2">
-                    <h3 className="font-semibold text-white truncate text-sm sm:text-base">{track.title}</h3>
-                    <Link
-                        href={`/artist/${track.artist}`}
-                        className="text-xs sm:text-sm text-muted-foreground hover:text-mint transition-colors truncate block"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {isUserTrack ? 'You' : track.artist}
-                    </Link>
+                        {/* Play Button Overlay */}
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                onPlay(track)
+                            }}
+                            className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            aria-label={isPlaying ? "Pause" : "Play"}
+                        >
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-mint flex items-center justify-center shadow-lg shadow-mint/50 transform group-hover:scale-110 transition-transform">
+                                {isPlaying ? (
+                                    <Pause className="w-6 h-6 sm:w-8 sm:h-8 text-black" fill="black" />
+                                ) : (
+                                    <Play className="w-6 h-6 sm:w-8 sm:h-8 text-black ml-0.5" fill="black" />
+                                )}
+                            </div>
+                        </button>
 
-                    {/* Social Stats */}
-                    <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground pt-1 sm:pt-2">
-                        <div className="flex items-center gap-1">
-                            <Heart className="w-3 h-3" />
-                            <span>{track.like_count || 0}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <MessageCircle className="w-3 h-3" />
-                            <span>{track.comment_count || 0}</span>
+                        {isPlaying && (
+                            <div className="absolute top-2 right-2 sm:top-6 sm:right-6 pointer-events-none">
+                                <Badge className="bg-mint text-black text-xs">
+                                    {isUserTrack ? 'Preview' : t.listen.playing}
+                                </Badge>
+                            </div>
+                        )}
+                        {isUserTrack && !isPlaying && (
+                            <div className="absolute top-2 right-2 sm:top-6 sm:right-6 pointer-events-none">
+                                <Badge className="bg-violet/80 text-white text-xs">
+                                    Your Track
+                                </Badge>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Track Info */}
+                    <div className="p-2 sm:p-4 space-y-1 sm:space-y-2">
+                        <h3 className="font-semibold text-white truncate text-sm sm:text-base hover:text-mint transition-colors">{track.title}</h3>
+                        <Link
+                            href={`/artist/${track.artist_id}`}
+                            className="text-xs sm:text-sm text-muted-foreground hover:text-mint transition-colors truncate block relative z-10"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {isUserTrack ? 'You' : track.artist}
+                        </Link>
+
+                        {/* Social Stats */}
+                        <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground pt-1 sm:pt-2">
+                            <div className="flex items-center gap-1">
+                                <Heart className="w-3 h-3" />
+                                <span>{track.like_count || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <MessageCircle className="w-3 h-3" />
+                                <span>{track.comment_count || 0}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -12,6 +12,7 @@ import { createClient } from "./client"
 export interface Profile {
     id: string
     username: string
+    wallet_address: string
     display_name?: string
     bio?: string
     avatar_url?: string

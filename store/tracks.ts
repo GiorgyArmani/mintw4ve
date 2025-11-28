@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware'
 export interface Track {
   id: string
   title: string
+  artist_id: string
   artist: string
   displayName?: string
   description: string

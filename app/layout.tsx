@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { Web3Provider } from "@/lib/web3-provider"
 import { ThemeProvider } from "@/components/theme-provider"
+import "@rainbow-me/rainbowkit/styles.css"
 import "./globals.css"
 
 import { Geist, Geist_Mono, Geist as V0_Font_Geist, Geist_Mono as V0_Font_Geist_Mono, Source_Serif_4 as V0_Font_Source_Serif_4 } from 'next/font/google'

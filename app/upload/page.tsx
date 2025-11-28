@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTracksStore } from "@/store/tracks"
 import { Upload, Music, Image as ImageIcon, Loader2, CheckCircle2 } from "lucide-react"
 import { GradientText } from "@/components/gradient-text"
+import { createClient } from "@/lib/supabase/client"
 
 export default function UploadPage() {
   const router = useRouter()
@@ -23,6 +24,7 @@ export default function UploadPage() {
 
   const [isUploading, setIsUploading] = useState(false)
   const [uploadStep, setUploadStep] = useState(0) // 0: idle, 1: uploading files, 2: minting, 3: success
+  const [uploadStatus, setUploadStatus] = useState("")
 
   const [formData, setFormData] = useState({
     title: "",
@@ -43,6 +45,46 @@ export default function UploadPage() {
     }
   }
 
+  // Helper to upload file to Supabase Storage
+  const uploadToSupabase = async (file: File, bucket: string) => {
+    const supabase = createClient()
+
+    // 1. Get signed URL and token
+    const signRes = await fetch('/api/upload/sign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filename: file.name,
+        filetype: file.type,
+        bucket,
+        artist: address
+      })
+    })
+
+    if (!signRes.ok) throw new Error('Failed to get upload signature')
+
+    const responseJson = await signRes.json()
+    const { path, token, fullPath } = responseJson
+
+    if (!token || !path) {
+      throw new Error('Invalid signature response')
+    }
+
+    // 2. Upload using the token
+    const { error } = await supabase.storage
+      .from(bucket)
+      .uploadToSignedUrl(path, token, file)
+
+    if (error) throw error
+
+    // 3. Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(path)
+
+    return { path, publicUrl, fullPath }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isConnected || !address) return
@@ -50,19 +92,34 @@ export default function UploadPage() {
 
     setIsUploading(true)
     setUploadStep(1)
+    setUploadStatus("Uploading audio...")
 
     try {
-      const uploadFormData = new FormData()
-      uploadFormData.append('title', formData.title)
-      uploadFormData.append('description', formData.description)
-      uploadFormData.append('genre', formData.genre)
-      uploadFormData.append('artist', address)
-      uploadFormData.append('audio', audioFile)
-      uploadFormData.append('cover', coverFile)
+      // 1. Upload Audio
+      const audioResult = await uploadToSupabase(audioFile, 'mintwave-audio')
 
+      setUploadStatus("Uploading cover art...")
+      // 2. Upload Cover
+      const coverResult = await uploadToSupabase(coverFile, 'mintwave-images')
+
+      setUploadStatus("Saving metadata...")
+      setUploadStep(2)
+
+      // 3. Save Metadata
       const response = await fetch('/api/upload', {
         method: 'POST',
-        body: uploadFormData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          genre: formData.genre,
+          artist: address,
+          audioPath: audioResult.path,
+          coverPath: coverResult.path,
+          audioUrl: audioResult.publicUrl,
+          coverUrl: coverResult.publicUrl,
+          metadataUri: `supabase://mintwave/${audioResult.path}` // Simple placeholder
+        }),
       })
 
       const data = await response.json()
@@ -80,8 +137,8 @@ export default function UploadPage() {
           displayName: 'You',
           description: data.track.description,
           genre: data.track.genre,
-          audioUrl: data.audioUrl,
-          coverUrl: data.coverUrl,
+          audioUrl: data.track.audio_url,
+          coverUrl: data.track.cover_url,
           metadataUri: data.track.metadata_uri,
           createdAt: data.track.created_at,
           playCount: 0,
@@ -273,7 +330,7 @@ export default function UploadPage() {
                     {isUploading ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        {uploadStep === 1 ? "Uploading Files..." : "Minting NFT..."}
+                        {uploadStep === 1 ? (uploadStatus || "Uploading Files...") : "Minting NFT..."}
                       </>
                     ) : (
                       <>

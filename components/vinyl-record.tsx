@@ -50,7 +50,7 @@ export function VinylRecord({ coverUrl, isPlaying, size = "md", className }: Vin
                             size === "lg" && "w-32 h-32",
                         )}
                     >
-                        <Image src={coverUrl || "/placeholder.svg"} alt="Album cover" fill className="object-cover" />
+                        <Image src={coverUrl || "/placeholder.svg"} alt="Album cover" fill className="object-cover" sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw" loading="lazy" />
                         {/* Center hole */}
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div

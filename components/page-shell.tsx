@@ -16,7 +16,7 @@ import { useTranslation } from "@/lib/i18n"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js"
-import { useAccount } from "wagmi"
+import { useAccount, useDisconnect } from "wagmi"
 
 export function PageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -25,6 +25,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation()
 
   const { address, isConnected } = useAccount()
+  const { disconnect } = useDisconnect()
 
   // Sync wallet with database profile
   useEffect(() => {
@@ -65,6 +66,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    disconnect() // Disconnect wallet
     setUser(null)
     router.refresh()
   }
@@ -75,8 +77,8 @@ export function PageShell({ children }: { children: React.ReactNode }) {
         <div className="container flex h-14 max-w-screen-2xl items-center">
           <div className="mr-4 hidden md:flex">
             <Link href="/" className="mr-6 flex items-center space-x-2">
-              <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={32} height={32} className="dark:invert-0 invert" />
-              <span className="hidden font-bold sm:inline-block text-foreground">MINTWAVE</span>
+              <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={32} height={32} className="dark:invert-0 invert" priority />
+              <span className="hidden font-bold sm:inline-block text-foreground">MINTW4VE</span>
             </Link>
             <nav className="flex items-center gap-6 text-sm font-medium">
               <Link
@@ -135,6 +137,24 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                   >
                     {t.nav.upload}
                   </Link>
+                  <Link
+                    href="/messages"
+                    className={cn(
+                      "transition-colors hover:text-foreground/80",
+                      pathname === "/messages" ? "text-foreground" : "text-foreground/60"
+                    )}
+                  >
+                    Messages
+                  </Link>
+                  <Link
+                    href="/profile/edit"
+                    className={cn(
+                      "transition-colors hover:text-foreground/80",
+                      pathname === "/profile/edit" ? "text-foreground" : "text-foreground/60"
+                    )}
+                  >
+                    Profile
+                  </Link>
                 </>
               )}
             </nav>
@@ -145,32 +165,34 @@ export function PageShell({ children }: { children: React.ReactNode }) {
               {/* Search or empty spacer */}
             </div>
 
-            <div className="flex items-center gap-4">
-              {user ? (
-                <div className="flex items-center gap-4">
-                  <span className="hidden sm:inline-block text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full border border-border">
+            <div className="flex items-center gap-2">
+              {user && (
+                <>
+                  <span className="hidden lg:inline-block text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-full border border-border max-w-[150px] truncate">
                     {user.email}
                   </span>
                   <Button
                     onClick={handleSignOut}
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                    className="hidden md:flex text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
                   >
                     {t.auth.signout}
                   </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
+                </>
+              )}
+
+              {!user && (
+                <>
                   <ModeToggle />
                   <LanguageSwitcher />
-                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hidden md:flex">
+                  <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hidden lg:flex">
                     <Link href="/auth/login">{t.auth.login}</Link>
                   </Button>
-                  <Button asChild size="sm" className="bg-mint text-mint-foreground hover:bg-mint/90 font-semibold shadow-lg shadow-mint/20 hidden md:flex">
+                  <Button asChild size="sm" className="bg-mint text-mint-foreground hover:bg-mint/90 font-semibold shadow-lg shadow-mint/20 hidden lg:flex">
                     <Link href="/auth/sign-up">{t.auth.signup}</Link>
                   </Button>
-                </div>
+                </>
               )}
 
               <div className="h-6 w-px bg-border mx-1 hidden md:block" />
@@ -247,6 +269,24 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                           >
                             {t.nav.upload}
                           </Link>
+                          <Link
+                            href="/messages"
+                            className={cn(
+                              "text-lg font-medium transition-colors hover:text-mint",
+                              pathname === "/messages" ? "text-foreground" : "text-muted-foreground",
+                            )}
+                          >
+                            Messages
+                          </Link>
+                          <Link
+                            href="/profile/edit"
+                            className={cn(
+                              "text-lg font-medium transition-colors hover:text-mint",
+                              pathname === "/profile/edit" ? "text-foreground" : "text-muted-foreground",
+                            )}
+                          >
+                            Profile
+                          </Link>
                           <Button
                             onClick={handleSignOut}
                             variant="ghost"
@@ -290,7 +330,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
             {/* Brand */}
             <div className="space-y-4">
               <div className="flex items-center">
-                <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={120} height={40} className="dark:invert-0 invert" />
+                <Image src="/mintwave-logo.svg" alt="MINTWAVE" width={120} height={40} className="dark:invert-0 invert" loading="lazy" />
               </div>
               <p className="text-sm text-muted-foreground">{t.footer.tagline}</p>
               <p className="text-xs text-muted-foreground">{t.footer.description}</p>
@@ -338,7 +378,7 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                   </Link>
                 </li>
                 <li>
-                  <Link href="https://github.com/mintw4ve" className="hover:text-foreground transition-colors">
+                  <Link href="https://github.com/GiorgyArmani/mintw4ve" className="hover:text-foreground transition-colors">
                     GitHub
                   </Link>
                 </li>

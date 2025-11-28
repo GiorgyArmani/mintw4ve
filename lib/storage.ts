@@ -241,3 +241,45 @@ export async function getBucketStats(): Promise<{
     return { audioFiles: 0, imageFiles: 0, totalSize: 0 };
   }
 }
+
+/**
+ * Upload marketplace asset (cover image, preview audio/video)
+ */
+export async function uploadMarketplaceAsset(
+  file: File,
+  type: 'image' | 'audio' | 'video',
+  userId: string
+): Promise<string> {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase credentials missing');
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const bucketName = type === 'image' ? 'mintwave-images' : 'mintwave-audio'; // Reuse existing buckets for now
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+  const filePath = `marketplace/${userId}/${fileName}`;
+
+  // Ensure bucket exists
+  const { data: buckets } = await supabase.storage.listBuckets();
+  if (!buckets?.find(b => b.name === bucketName)) {
+    await supabase.storage.createBucket(bucketName, { public: true });
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from(bucketName)
+    .upload(filePath, await file.arrayBuffer(), {
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload ${type}: ${uploadError.message}`);
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from(bucketName)
+    .getPublicUrl(filePath);
+
+  return publicUrl;
+}
